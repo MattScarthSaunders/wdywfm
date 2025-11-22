@@ -1,5 +1,4 @@
 import type { NetworkRequest, ParsedCookie } from '../types';
-import { HeaderFormatter } from './HeaderFormatter';
 
 /**
  * Service for formatting cookies for display
@@ -156,67 +155,6 @@ export class CookieFormatter {
         usageInfo
       };
     });
-  }
-
-  /**
-   * Format cookies as HTML for display
-   * @deprecated Use getCookiesWithUsage instead and render with Vue components
-   */
-  static formatCookies(
-    cookies: ParsedCookie[] | undefined,
-    request: NetworkRequest,
-    allRequests: NetworkRequest[]
-  ): string {
-    if (!cookies || cookies.length === 0) {
-      return 'No set-cookies';
-    }
-    
-    // Find the index of the current request
-    const requestIndex = allRequests.findIndex(r => String(r.id) === String(request.id));
-    
-    let html = '';
-    cookies.forEach(cookie => {
-      const cookieName = HeaderFormatter.escapeHtml(cookie.name);
-      const cookieValueRaw = cookie.value;
-      const cookieValueEscaped = HeaderFormatter.escapeHtml(cookieValueRaw);
-      const isLongValue = cookieValueRaw.length > 100;
-      const truncatedValue = isLongValue ? cookieValueEscaped.substring(0, 100) : cookieValueEscaped;
-      const cookieId = `cookie-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Find all usages of this exact cookie (name + value)
-      const usageInfo = requestIndex !== -1 && request.requestNumber
-        ? this.findAllUsagesOfCookie(cookie.name, cookie.value, requestIndex, request.requestNumber, allRequests)
-        : { source: { id: request.requestNumber || '?', name: null }, usages: [] };
-      
-      // Format usage information
-      const sourceName = usageInfo.source.name ? HeaderFormatter.escapeHtml(usageInfo.source.name) : 'unknown';
-      const sourceText = `source: ${usageInfo.source.id}:${sourceName}`;
-      const usagesText = usageInfo.usages.length > 0 
-        ? `used in [${usageInfo.usages.join(',')}]`
-        : 'unused';
-      const usageDisplay = `${sourceText}, ${usagesText}`;
-      const usageClass = usageInfo.usages.length > 0 ? 'cookie-used' : 'cookie-unused';
-      
-      html += `<div class="cookie-item">
-        <div class="cookie-header">
-          <div class="cookie-name" title="${cookieName}">${cookieName}</div>
-          <div class="cookie-value">
-            <span class="cookie-value-text" id="${cookieId}-text">${truncatedValue}</span>
-            ${isLongValue ? `<span class="cookie-expand" id="${cookieId}-expand" data-full="${HeaderFormatter.escapeHtml(cookieValueRaw)}" data-id="${cookieId}">[...]</span>` : ''}
-          </div>
-        </div>
-        <div class="cookie-attributes">
-          ${Object.entries(cookie.attributes).map(([k, v]) => 
-            `${k}: ${v === true ? 'true' : HeaderFormatter.escapeHtml(String(v))}`
-          ).join(', ')}
-        </div>
-        <div class="cookie-usage ${usageClass}">
-          ${usageDisplay}
-        </div>
-      </div>`;
-    });
-    
-    return html;
   }
 }
 

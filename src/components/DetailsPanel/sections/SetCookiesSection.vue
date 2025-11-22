@@ -16,10 +16,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { NetworkRequest } from '../../types';
-import { CookieFormatter } from '../../services/CookieFormatter';
-import DetailsSection from './DetailsSection.vue';
-import CookieItem from './CookieItem.vue';
+import type { NetworkRequest } from '../../../types';
+import { CookieFormatter } from '../../../services/CookieFormatter';
+import DetailsSection from '../DetailsSection.vue';
+import CookieItem from '../components/CookieItem.vue';
 
 const props = defineProps<{
   request: NetworkRequest;

@@ -11,16 +11,24 @@
         </button>
       </div>
     </template>
-    <div id="detailsGeneral">{{ generalInfo }}</div>
+    <div id="detailsGeneral" class="general-info">
+      <div><strong>URL:</strong> {{ generalInfo.url }}</div>
+      <div><strong>Method:</strong> {{ generalInfo.method }}</div>
+      <div><strong>Status:</strong> {{ generalInfo.status }}</div>
+      <div><strong>Type:</strong> {{ generalInfo.type }}</div>
+      <div><strong>Size:</strong> {{ generalInfo.size }}</div>
+      <div><strong>Time:</strong> {{ generalInfo.time }}</div>
+      <div><strong>Timestamp:</strong> {{ generalInfo.timestamp }}</div>
+    </div>
   </DetailsSection>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import type { NetworkRequest } from '../../types';
-import { DetailsFormatter } from '../../services/DetailsFormatter';
-import { ClipboardService } from '../../services/ClipboardService';
-import DetailsSection from './DetailsSection.vue';
+import type { NetworkRequest } from '../../../types';
+import { DetailsFormatter } from '../../../services/DetailsFormatter';
+import { ClipboardService } from '../../../services/ClipboardService';
+import DetailsSection from '../DetailsSection.vue';
 
 const props = defineProps<{
   request: NetworkRequest;
@@ -29,7 +37,7 @@ const props = defineProps<{
 const isCopied = ref(false);
 
 const generalInfo = computed(() => {
-  return DetailsFormatter.formatGeneralInfo(props.request);
+  return DetailsFormatter.getGeneralInfo(props.request);
 });
 
 async function copyUrl() {
@@ -75,6 +83,22 @@ async function copyUrl() {
 
 .copy-json-btn-header.copied {
   background: var(--color-success);
+}
+
+.general-info {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.general-info div {
+  margin-bottom: 4px;
+}
+
+.general-info strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
 }
 </style>
 

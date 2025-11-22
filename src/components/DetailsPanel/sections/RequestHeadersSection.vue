@@ -34,19 +34,26 @@
         </button>
       </div>
     </template>
-    <div 
-      id="detailsRequestHeaders" 
-      v-html="formattedRequestHeaders"
-    ></div>
+    <HeadersList
+      v-if="viewMode === 'formatted'"
+      :headers="headers"
+      :grade-importance="gradeHeaderImportance"
+    />
+    <HeadersJson
+      v-else
+      :headers="request.requestHeaders"
+    />
   </DetailsSection>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import type { NetworkRequest } from '../../types';
-import { HeaderFormatter } from '../../services/HeaderFormatter';
-import { ClipboardService } from '../../services/ClipboardService';
-import DetailsSection from './DetailsSection.vue';
+import type { NetworkRequest } from '../../../types';
+import { HeaderFormatter } from '../../../services/HeaderFormatter';
+import { ClipboardService } from '../../../services/ClipboardService';
+import DetailsSection from '../DetailsSection.vue';
+import HeadersList from '../components/HeadersList.vue';
+import HeadersJson from '../components/HeadersJson.vue';
 
 const props = defineProps<{
   request: NetworkRequest;
@@ -60,12 +67,8 @@ defineEmits<{
 const viewMode = ref<'json' | 'formatted'>('formatted');
 const isCopied = ref(false);
 
-const formattedRequestHeaders = computed(() => {
-  if (viewMode.value === 'json') {
-    return HeaderFormatter.formatHeadersAsJSON(props.request.requestHeaders);
-  } else {
-    return HeaderFormatter.formatHeadersForDisplay(props.request.requestHeaders, props.gradeHeaderImportance);
-  }
+const headers = computed(() => {
+  return HeaderFormatter.getHeaders(props.request.requestHeaders, props.gradeHeaderImportance);
 });
 
 async function copyRequestHeaders() {

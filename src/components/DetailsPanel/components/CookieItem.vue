@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import type { ParsedCookie } from '../../types';
+import type { ParsedCookie } from '../../../types';
 
 interface CookieUsageInfo {
   source: { id: string | number; name: string | null };
@@ -157,7 +157,11 @@ const usageDisplay = computed(() => {
   color: var(--color-warning-yellow);
 }
 
-.cookie-usage.cookie-unused {
+.cookie-usage.cookie-unused .cookie-usage-source {
+  color: var(--color-text-tertiary);
+}
+
+.cookie-usage.cookie-unused .cookie-usage-usages {
   color: var(--color-text-tertiary);
 }
 </style>

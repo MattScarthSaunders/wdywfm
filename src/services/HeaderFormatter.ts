@@ -1,3 +1,9 @@
+export interface Header {
+  name: string;
+  value: string;
+  importance?: string;
+}
+
 /**
  * Service for formatting HTTP headers for display
  */
@@ -50,53 +56,28 @@ export class HeaderFormatter {
   }
 
   /**
-   * Escape HTML to prevent XSS
+   * Get headers as structured data for Vue components
    */
-  static escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
-  /**
-   * Format headers as HTML for display
-   */
-  static formatHeadersForDisplay(headers: Record<string, string | string[]>, gradeImportance: boolean): string {
+  static getHeaders(headers: Record<string, string | string[]>, gradeImportance: boolean): Header[] {
     if (!headers || Object.keys(headers).length === 0) {
-      return '<div style="color: #999;">No headers</div>';
+      return [];
     }
 
-    let html = '';
+    const headerList: Header[] = [];
     for (const [key, value] of Object.entries(headers)) {
       const val = Array.isArray(value) ? value.join(', ') : value;
       const valStr = String(val);
-      const isLong = valStr.length > 100;
-      const truncatedVal = isLong ? valStr.substring(0, 100) : valStr;
-      const headerId = `header-${key.replace(/[^a-zA-Z0-9]/g, '-')}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
-      const importanceClass = gradeImportance ? `header-${this.getHeaderImportance(key)}` : '';
+      const importance = gradeImportance ? this.getHeaderImportance(key) : undefined;
       
-      html += `<div class="header-row ${importanceClass}">
-        <div class="header-name ${importanceClass}">${this.escapeHtml(key)}</div>
-        <div class="header-value ${importanceClass}">
-          <span class="header-value-text" id="${headerId}-text">${this.escapeHtml(truncatedVal)}</span>
-          ${isLong ? `<span class="header-expand" id="${headerId}-expand" data-full="${this.escapeHtml(valStr)}" data-id="${headerId}">[...]</span>` : ''}
-        </div>
-      </div>`;
+      headerList.push({
+        name: key,
+        value: valStr,
+        importance
+      });
     }
     
-    return html;
-  }
-
-  /**
-   * Format headers as JSON for display
-   */
-  static formatHeadersAsJSON(headers: Record<string, string | string[]>): string {
-    if (!headers || Object.keys(headers).length === 0) {
-      return '<div style="color: #999;">No headers</div>';
-    }
-    const jsonStr = JSON.stringify(headers, null, 2);
-    return `<pre class="json-display">${this.escapeHtml(jsonStr)}</pre>`;
+    return headerList;
   }
 }
 

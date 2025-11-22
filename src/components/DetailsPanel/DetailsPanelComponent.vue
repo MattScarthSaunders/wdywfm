@@ -34,16 +34,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import { computed } from 'vue';
 import type { NetworkRequest } from '../../types';
 import { RequestFormatter } from '../../services/RequestFormatter';
-import GeneralSection from './GeneralSection.vue';
-import RequestHeadersSection from './RequestHeadersSection.vue';
-import PayloadSection from './PayloadSection.vue';
-import ResponseHeadersSection from './ResponseHeadersSection.vue';
-import SetCookiesSection from './SetCookiesSection.vue';
-import SessionAnalysisSection from './SessionAnalysisSection.vue';
-import BotDetectionSection from './BotDetectionSection.vue';
+import GeneralSection from './sections/GeneralSection.vue';
+import RequestHeadersSection from './sections/RequestHeadersSection.vue';
+import PayloadSection from './sections/PayloadSection.vue';
+import ResponseHeadersSection from './sections/ResponseHeadersSection.vue';
+import SetCookiesSection from './sections/SetCookiesSection.vue';
+import SessionAnalysisSection from './sections/SessionAnalysisSection.vue';
+import BotDetectionSection from './sections/BotDetectionSection.vue';
 
 const props = defineProps<{
   request: NetworkRequest;
@@ -60,72 +60,7 @@ const requestTitle = computed(() => {
   return RequestFormatter.getRequestTitle(props.request);
 });
 
-// Set up event delegation for expand/collapse buttons
-let detailsPanelClickHandler: ((e: MouseEvent) => void) | null = null;
-
-function setupEventDelegation() {
-  const detailsPanel = document.getElementById('detailsPanel');
-  if (!detailsPanel) return;
-
-  // Remove existing handler if any
-  if (detailsPanelClickHandler) {
-    detailsPanel.removeEventListener('click', detailsPanelClickHandler);
-  }
-
-  detailsPanelClickHandler = (e: MouseEvent) => {
-    const target = e.target as HTMLElement;
-    
-    // Handle header expand/collapse
-    if (target.classList.contains('header-expand')) {
-      e.stopPropagation();
-      const expandBtn = target;
-      const headerId = expandBtn.dataset.id;
-      const fullValue = expandBtn.dataset.full;
-      if (!headerId || !fullValue) return;
-      
-      const textSpan = document.getElementById(`${headerId}-text`);
-      if (!textSpan) return;
-      
-      if (expandBtn.classList.contains('expanded')) {
-        // Collapse
-        textSpan.textContent = fullValue.substring(0, 100);
-        expandBtn.textContent = '[...]';
-        expandBtn.classList.remove('expanded');
-      } else {
-        // Expand
-        textSpan.textContent = fullValue;
-        expandBtn.textContent = '[collapse]';
-        expandBtn.classList.add('expanded');
-      }
-    }
-  };
-
-  detailsPanel.addEventListener('click', detailsPanelClickHandler);
-}
-
-onMounted(() => {
-  // Wait for DOM to be ready, then set up event delegation
-  nextTick(() => {
-    setupEventDelegation();
-  });
-});
-
-// Re-setup event delegation when content changes (when request changes)
-watch(() => props.request, () => {
-  nextTick(() => {
-    setupEventDelegation();
-  });
-}, { deep: true });
-
-onUnmounted(() => {
-  if (detailsPanelClickHandler) {
-    const detailsPanel = document.getElementById('detailsPanel');
-    if (detailsPanel) {
-      detailsPanel.removeEventListener('click', detailsPanelClickHandler);
-    }
-    detailsPanelClickHandler = null;
-  }
-});
+// Event delegation is no longer needed - all expand/collapse is handled by Vue components
 </script>
 
 <style scoped>
