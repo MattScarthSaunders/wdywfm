@@ -23,7 +23,6 @@
           :key="request.id"
           :data-request-id="request.id"
           :class="{
-            'session-request': request.session.isSession,
             'bot-detection': request.botDetection.isBotDetection,
             'selected': selectedRequest?.id === request.id,
             'cookie-source': cookieSourceIds.has(String(request.id)),
@@ -356,24 +355,6 @@ function formatTime(ms: number): string {
   border-left: 4px solid #7b1fa2 !important;
 }
 
-/* Cookie highlighting should override session highlighting */
-.requests-table tbody tr.cookie-source.session-request {
-  background: #e8f5e9 !important;
-  border-left: 3px solid #4caf50 !important;
-}
-
-.requests-table tbody tr.cookie-recipient.session-request {
-  background: #f3e5f5 !important;
-  border-left: 4px solid #9c27b0 !important;
-}
-
-.requests-table tbody tr.session-request {
-  background: #fff3e0;
-}
-
-.requests-table tbody tr.session-request:hover {
-  background: #ffe0b2;
-}
 
 .requests-table tbody tr.bot-detection {
   border-left: 3px solid #f44336;

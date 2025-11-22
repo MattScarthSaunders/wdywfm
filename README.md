@@ -95,13 +95,7 @@ network-analysis/
 ├── utils.js               # Utility classes (filtering, detection, parsing)
 ├── styles.css             # UI styles
 ├── background.js          # Background service worker
-├── icons/                 # Extension icons (see ICONS.md)
-└── create-icons.html      # Helper to generate icons
 ```
-
-## Icons
-
-The extension requires icon files in the `icons/` directory. See `ICONS.md` for instructions on creating them. The extension will work without custom icons, but Chrome will use a default icon.
 
 ## Permissions
 

@@ -1,7 +1,7 @@
 // Create the DevTools panel
 chrome.devtools.panels.create(
   "Network Analysis",
-  "icons/icon48.png",
+  undefined,
   "panel.html",
   (panel) => {
     // Panel created

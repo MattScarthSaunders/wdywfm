@@ -4,21 +4,13 @@
       :filter-text="filterText"
       :total-requests="requests.length"
       :filtered-requests="filteredRequests.length"
-      :session-requests="sessionCount"
-      :bot-detection-count="botCount"
       @update:filter-text="filterText = $event"
       @clear-filter="clearFilter"
     />
     
     <ToolbarComponent
       :preserve-log="preserveLog"
-      :show-only-sessions="showOnlySessions"
-      :show-only-bot-detection="showOnlyBotDetection"
-      :grade-header-importance="gradeHeaderImportance"
       @update:preserve-log="preserveLog = $event"
-      @update:show-only-sessions="showOnlySessions = $event"
-      @update:show-only-bot-detection="showOnlyBotDetection = $event"
-      @update:grade-header-importance="gradeHeaderImportance = $event"
       @clear="clearRequests"
       @export="exportData"
     />
@@ -57,10 +49,7 @@ const filteredRequests = ref<NetworkRequest[]>([]);
 const selectedRequest = ref<NetworkRequest | null>(null);
 const filterText = ref('');
 
-const { preserveLog, showOnlySessions, showOnlyBotDetection, gradeHeaderImportance, loadSettings, saveSettings } = useSettings();
-
-const sessionCount = computed(() => requests.value.filter(r => r.session.isSession).length);
-const botCount = computed(() => requests.value.filter(r => r.botDetection.isBotDetection).length);
+const { preserveLog, gradeHeaderImportance, loadSettings, saveSettings } = useSettings();
 
 const { startMonitoring } = useNetworkMonitoring({
   onRequest: (requestData: NetworkRequest) => {
@@ -79,12 +68,6 @@ function applyFilters() {
   
   filteredRequests.value = requests.value.filter(request => {
     if (parser && !parser.matches(request)) {
-      return false;
-    }
-    if (showOnlySessions.value && !request.session.isSession) {
-      return false;
-    }
-    if (showOnlyBotDetection.value && !request.botDetection.isBotDetection) {
       return false;
     }
     return true;
@@ -132,7 +115,7 @@ function exportData() {
   URL.revokeObjectURL(url);
 }
 
-watch([filterText, showOnlySessions, showOnlyBotDetection], () => {
+watch([filterText], () => {
   applyFilters();
 });
 

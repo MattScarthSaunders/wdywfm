@@ -15,8 +15,6 @@
     <div class="stats-bar">
       <span>Total: {{ totalRequests }}</span>
       <span>Filtered: {{ filteredRequests }}</span>
-      <span>Sessions: {{ sessionRequests }}</span>
-      <span>Bot Detection: {{ botDetectionCount }}</span>
     </div>
   </div>
 </template>
@@ -26,8 +24,6 @@ defineProps<{
   filterText: string;
   totalRequests: number;
   filteredRequests: number;
-  sessionRequests: number;
-  botDetectionCount: number;
 }>();
 
 defineEmits<{
