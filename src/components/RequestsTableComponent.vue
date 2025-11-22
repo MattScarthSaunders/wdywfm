@@ -46,7 +46,7 @@
           <td>{{ formatSize(request.size) }}</td>
           <td>{{ formatTime(request.time) }}</td>
           <td>
-            <span v-if="request.session.isSession" class="session-badge" :title="request.session.reason">
+            <span v-if="request.session.isSession" class="session-badge" :title="request.session.reason ?? undefined">
               Session
             </span>
             <span v-else>-</span>
@@ -279,4 +279,253 @@ function formatTime(ms: number): string {
   return formatter.formatTime(ms);
 }
 </script>
+
+<style scoped>
+.table-container {
+  flex: 1;
+  overflow: auto;
+  overflow-x: hidden;
+}
+
+.requests-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  table-layout: fixed;
+}
+
+.requests-table thead {
+  position: sticky;
+  top: 0;
+  background: #f5f5f5;
+  z-index: 10;
+}
+
+.requests-table th {
+  padding: 8px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #ddd;
+  color: #666;
+  font-size: 11px;
+}
+
+.requests-table th.col-name {
+  padding-right: 12px;
+}
+
+.requests-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.requests-table tbody tr {
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.requests-table tbody tr:hover {
+  background: #f5f5f5;
+}
+
+.requests-table tbody tr.selected {
+  background: #e3f2fd;
+  outline: 1px solid black;
+}
+
+.requests-table tbody tr.selected td:first-child {
+  border-left: 3px solid #2f9c19 !important;
+}
+
+.requests-table tbody tr.cookie-source {
+  background: #e8f5e9 !important;
+  border-left: 3px solid #4caf50 !important;
+}
+
+.requests-table tbody tr.cookie-source:hover {
+  background: #c8e6c9 !important;
+}
+
+.requests-table tbody tr.cookie-recipient {
+  background: #f3e5f5 !important;
+  border-left: 4px solid #9c27b0 !important;
+}
+
+.requests-table tbody tr.cookie-recipient:hover {
+  background: #e1bee7 !important;
+  border-left: 4px solid #7b1fa2 !important;
+}
+
+/* Cookie highlighting should override session highlighting */
+.requests-table tbody tr.cookie-source.session-request {
+  background: #e8f5e9 !important;
+  border-left: 3px solid #4caf50 !important;
+}
+
+.requests-table tbody tr.cookie-recipient.session-request {
+  background: #f3e5f5 !important;
+  border-left: 4px solid #9c27b0 !important;
+}
+
+.requests-table tbody tr.session-request {
+  background: #fff3e0;
+}
+
+.requests-table tbody tr.session-request:hover {
+  background: #ffe0b2;
+}
+
+.requests-table tbody tr.bot-detection {
+  border-left: 3px solid #f44336;
+}
+
+.col-name {
+  width: 40%;
+  min-width: 200px;
+  position: relative;
+  overflow: hidden;
+}
+
+.col-name span {
+  display: block;
+  padding-right: 8px;
+}
+
+.resize-handle {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  background: rgba(0, 120, 212, 0.1);
+  z-index: 100;
+  touch-action: none;
+  pointer-events: auto;
+}
+
+.resize-handle:hover {
+  background: rgba(0, 120, 212, 0.5);
+}
+
+.resize-handle.active {
+  background: #0078d4;
+}
+
+.col-id {
+  width: 50px;
+  min-width: 50px;
+  text-align: center;
+  font-weight: 600;
+  color: #666;
+}
+
+.col-method {
+  width: 8%;
+  min-width: 60px;
+}
+
+.col-status {
+  width: 8%;
+  min-width: 70px;
+}
+
+.col-type {
+  width: 10%;
+  min-width: 80px;
+}
+
+.col-size {
+  width: 10%;
+  min-width: 80px;
+}
+
+.col-time {
+  width: 8%;
+  min-width: 70px;
+}
+
+.col-session {
+  width: 8%;
+  min-width: 80px;
+}
+
+.col-bot {
+  width: 8%;
+  min-width: 80px;
+}
+
+.status-code {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 10px;
+}
+
+.status-2xx {
+  background: #c8e6c9;
+  color: #2e7d32;
+}
+
+.status-3xx {
+  background: #fff9c4;
+  color: #f57f17;
+}
+
+.status-4xx {
+  background: #ffccbc;
+  color: #d84315;
+}
+
+.status-5xx {
+  background: #ef9a9a;
+  color: #c62828;
+}
+
+.method {
+  font-weight: 600;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 10px;
+}
+
+.method-GET {
+  color: #1976d2;
+}
+
+.method-POST {
+  color: #388e3c;
+}
+
+.method-PUT {
+  color: #f57c00;
+}
+
+.method-DELETE {
+  color: #d32f2f;
+}
+
+.method-PATCH {
+  color: #7b1fa2;
+}
+
+.session-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #ff9800;
+  color: white;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.bot-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #f44336;
+  color: white;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+}
+</style>
 
