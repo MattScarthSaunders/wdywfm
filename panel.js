@@ -445,16 +445,20 @@ async function processRequest(request) {
       botDetection: null
     };
 
-    // Extract request headers
+    // Extract request headers (normalize to lowercase for consistent access)
     if (request.request.headers) {
       for (const header of request.request.headers) {
+        const headerName = header.name.toLowerCase();
+        // Store both original and normalized versions
         requestData.requestHeaders[header.name] = header.value;
+        requestData.requestHeaders[headerName] = header.value;
       }
     }
 
-    // Parse cookies
-    if (requestData.requestHeaders['cookie']) {
-      requestData.cookies = cookieParser.parseCookie(requestData.requestHeaders['cookie']);
+    // Parse cookies (try both case variations)
+    const cookieHeader = requestData.requestHeaders['cookie'] || requestData.requestHeaders['Cookie'];
+    if (cookieHeader) {
+      requestData.cookies = cookieParser.parseCookie(cookieHeader);
     }
 
     if (requestData.responseHeaders['set-cookie']) {
@@ -515,6 +519,7 @@ function applyFilters() {
 
   renderTable();
   updateStats();
+  updateTableSelection(); // Update highlighting after filtering
 }
 
 function renderTable() {
@@ -542,14 +547,14 @@ function createTableRow(request, index) {
     row.classList.add('bot-detection');
   }
 
-  if (selectedRequest && selectedRequest.id === request.id) {
-    row.classList.add('selected');
-  }
+  // Note: selected, cookie-source, and cookie-recipient classes are added in updateTableSelection()
 
   row.addEventListener('click', () => {
     selectedRequest = request;
     updateTableSelection();
     showRequestDetails(request);
+    // Force a re-render to ensure highlighting is applied
+    setTimeout(updateTableSelection, 0);
   });
 
   // Name column
@@ -629,13 +634,215 @@ function createTableRow(request, index) {
   return row;
 }
 
+function findCookieSourceRequests(request) {
+  // Find requests that set cookies used by this request
+  const sourceRequestIds = new Set();
+  
+  // Check what cookies the request has
+  if (!request.cookies || !Array.isArray(request.cookies) || request.cookies.length === 0) {
+    return sourceRequestIds;
+  }
+  
+  // Extract cookie names from request cookies (normalized)
+  const cookieNames = new Set();
+  request.cookies.forEach(cookie => {
+    if (cookie && cookie.name && typeof cookie.name === 'string' && cookie.name.trim()) {
+      const name = cookie.name.trim().toLowerCase();
+      if (name.length > 0) {
+        cookieNames.add(name);
+      }
+    }
+  });
+  
+  if (cookieNames.size === 0) {
+    return sourceRequestIds;
+  }
+  
+  // Check all requests (use index as fallback if timestamps are the same)
+  const requestIndex = requests.findIndex(r => String(r.id) === String(request.id));
+  if (requestIndex === -1) return sourceRequestIds;
+  
+  // Check all earlier requests
+  for (let i = 0; i < requestIndex; i++) {
+    const req = requests[i];
+    if (!req) continue;
+    if (String(req.id) === String(request.id)) continue;
+    if (!req.setCookies || !Array.isArray(req.setCookies) || req.setCookies.length === 0) continue;
+    
+    // Check if this request sets any cookies that the selected request uses
+    req.setCookies.forEach(setCookie => {
+      if (setCookie && setCookie.name && typeof setCookie.name === 'string' && setCookie.name.trim()) {
+        const setName = setCookie.name.trim().toLowerCase();
+        if (setName.length > 0 && cookieNames.has(setName)) {
+          sourceRequestIds.add(String(req.id));
+        }
+      }
+    });
+  }
+  
+  return sourceRequestIds;
+}
+
+function findCookieRecipientRequests(request) {
+  // Find requests that use cookies set by this request
+  const recipientRequestIds = new Set();
+  
+  // Check what cookies this request sets
+  if (!request.setCookies || !Array.isArray(request.setCookies) || request.setCookies.length === 0) {
+    return recipientRequestIds;
+  }
+  
+  // Extract cookie names from set-cookie headers
+  const cookieNames = new Set();
+  request.setCookies.forEach(setCookie => {
+    if (setCookie && setCookie.name && typeof setCookie.name === 'string' && setCookie.name.trim()) {
+      const name = setCookie.name.trim().toLowerCase();
+      if (name.length > 0) {
+        cookieNames.add(name);
+      }
+    }
+  });
+  
+  if (cookieNames.size === 0) {
+    return recipientRequestIds;
+  }
+  
+  // Check all requests (use index as fallback if timestamps are the same)
+  const requestIndex = requests.findIndex(r => String(r.id) === String(request.id));
+  if (requestIndex === -1) return recipientRequestIds;
+  
+  // Check all later requests
+  let checkedCount = 0;
+  let withCookiesCount = 0;
+  const sampleCookieNames = [];
+  const matchingDetails = []; // Track which cookies matched
+  let nextRequestCookies = null; // Debug: check the immediate next request
+  for (let i = requestIndex + 1; i < requests.length; i++) {
+    const req = requests[i];
+    if (!req) continue;
+    if (String(req.id) === String(request.id)) continue;
+    checkedCount++;
+    
+    // Debug: capture the immediate next request's cookies
+    if (i === requestIndex + 1 && req.cookies && Array.isArray(req.cookies)) {
+      nextRequestCookies = req.cookies
+        .filter(c => c && c.name && typeof c.name === 'string' && c.name.trim())
+        .map(c => c.name.trim().toLowerCase());
+    }
+    
+    if (!req.cookies || !Array.isArray(req.cookies) || req.cookies.length === 0) continue;
+    withCookiesCount++;
+    
+    // Collect sample cookie names for debugging (first 3 requests with cookies)
+    if (sampleCookieNames.length < 3 && req.cookies.length > 0) {
+      const reqCookieNames = req.cookies
+        .filter(c => c && c.name && typeof c.name === 'string' && c.name.trim())
+        .map(c => c.name.trim().toLowerCase())
+        .slice(0, 10); // Show more cookies
+      if (reqCookieNames.length > 0) {
+        sampleCookieNames.push(reqCookieNames.join(','));
+      }
+    }
+    
+    // Check if this request uses any cookies that the selected request sets
+    req.cookies.forEach(cookie => {
+      if (cookie && cookie.name && typeof cookie.name === 'string' && cookie.name.trim()) {
+        const cookieName = cookie.name.trim().toLowerCase();
+        if (cookieName.length > 0 && cookieNames.has(cookieName)) {
+          recipientRequestIds.add(String(req.id));
+          // Track what matched
+          if (matchingDetails.length < 3) {
+            matchingDetails.push(`${req.id}:${cookieName}`);
+          }
+        }
+      }
+    });
+  }
+  
+  // Store debug info
+  request._recipientDebug = {
+    cookieNames: Array.from(cookieNames),
+    checkedCount,
+    withCookiesCount,
+    foundIds: Array.from(recipientRequestIds),
+    sampleCookieNames,
+    matchingDetails,
+    nextRequestCookies: nextRequestCookies || []
+  };
+  
+  return recipientRequestIds;
+}
+
 function updateTableSelection() {
   const rows = document.querySelectorAll('#requestsBody tr');
+  
+  if (!selectedRequest) {
+    // Clear all highlighting if nothing is selected
+    rows.forEach(row => {
+      row.classList.remove('selected', 'cookie-source', 'cookie-recipient');
+    });
+    return;
+  }
+  
+  // Find the actual request object from the requests array to ensure we have the latest data
+  const actualRequest = requests.find(r => String(r.id) === String(selectedRequest.id));
+  if (!actualRequest) {
+    // If not found, use selectedRequest as fallback
+    const sourceRequestIds = findCookieSourceRequests(selectedRequest);
+    const recipientRequestIds = findCookieRecipientRequests(selectedRequest);
+    
+    rows.forEach(row => {
+      const requestId = String(row.dataset.requestId);
+      const selectedId = String(selectedRequest.id);
+      
+      row.classList.remove('selected', 'cookie-source', 'cookie-recipient');
+      
+      if (requestId === selectedId) {
+        row.classList.add('selected');
+      } else if (sourceRequestIds.has(requestId)) {
+        row.classList.add('cookie-source');
+      } else if (recipientRequestIds.has(requestId)) {
+        row.classList.add('cookie-recipient');
+      }
+    });
+    return;
+  }
+  
+  const sourceRequestIds = findCookieSourceRequests(actualRequest);
+  const recipientRequestIds = findCookieRecipientRequests(actualRequest);
+  
+  // Add data attributes for debugging
+  if (sourceRequestIds.size > 0 || recipientRequestIds.size > 0) {
+    actualRequest._cookieSources = Array.from(sourceRequestIds);
+    actualRequest._cookieRecipients = Array.from(recipientRequestIds);
+  }
+  
   rows.forEach(row => {
-    if (selectedRequest && row.dataset.requestId === selectedRequest.id) {
+    const requestId = String(row.dataset.requestId);
+    const selectedId = String(actualRequest.id);
+    
+    // Remove all selection-related classes
+    row.classList.remove('selected', 'cookie-source', 'cookie-recipient');
+    
+    if (requestId === selectedId) {
       row.classList.add('selected');
+      row.style.removeProperty('background');
+      row.style.removeProperty('border-left');
+    } else if (sourceRequestIds.has(requestId)) {
+      row.classList.add('cookie-source');
+      row.setAttribute('title', 'Cookie source: Sets cookies used by selected request');
+      // Force style application with inline styles
+      row.style.cssText += 'background: #e8f5e9 !important; border-left: 3px solid #4caf50 !important;';
+    } else if (recipientRequestIds.has(requestId)) {
+      row.classList.add('cookie-recipient');
+      row.setAttribute('title', 'Cookie recipient: Uses cookies set by selected request');
+      // Force style application with inline styles
+      row.style.cssText += 'background: #fff3e0 !important; border-left: 3px solid #ff9800 !important;';
     } else {
-      row.classList.remove('selected');
+      row.removeAttribute('title');
+      // Clear inline styles if not a cookie-related row
+      row.style.removeProperty('background');
+      row.style.removeProperty('border-left');
     }
   });
 }
@@ -654,11 +861,57 @@ function showRequestDetails(request) {
         content.style.maxHeight = content.scrollHeight + 'px';
       }
     });
+    // Ensure highlighting is applied after panel is shown
+    updateTableSelection();
   }, 0);
+  
+  // Also update highlighting immediately and after a short delay
+  updateTableSelection();
+  setTimeout(updateTableSelection, 50);
 
   // Title
+  const titleText = new URL(request.url).pathname.split('/').pop() || request.url;
+  
+  // Debug: Show cookie relationships in title
+  const sourceIds = findCookieSourceRequests(request);
+  const recipientIds = findCookieRecipientRequests(request);
+  const cookieCount = request.cookies ? request.cookies.length : 0;
+  const setCookieCount = request.setCookies ? request.setCookies.length : 0;
+  
+  // Show cookie names for debugging (first 3, normalized)
+  const cookieNames = request.cookies && request.cookies.length > 0 
+    ? request.cookies.filter(c => c && c.name && c.name.trim()).map(c => c.name.trim().toLowerCase()).slice(0, 3).join(', ') 
+    : 'none';
+  const setCookieNames = request.setCookies && request.setCookies.length > 0
+    ? request.setCookies.filter(c => c && c.name && c.name.trim()).map(c => c.name.trim().toLowerCase()).slice(0, 3).join(', ')
+    : 'none';
+  
+  // Show which request IDs were found and total requests checked
+  const sourceIdList = sourceIds.size > 0 ? Array.from(sourceIds).slice(0, 3).join(',') : 'none';
+  const recipientIdList = recipientIds.size > 0 ? Array.from(recipientIds).slice(0, 3).join(',') : 'none';
+  const totalRequests = requests.length;
+  const requestIndex = requests.findIndex(r => String(r.id) === String(request.id));
+  
+  // Add debug info for recipients
+  let recipientDebug = '';
+  if (request._recipientDebug) {
+    recipientDebug = ` | checked:${request._recipientDebug.checkedCount} w/cookies:${request._recipientDebug.withCookiesCount}`;
+    if (request._recipientDebug.cookieNames && request._recipientDebug.cookieNames.length > 0) {
+      recipientDebug += ` lookingFor:${request._recipientDebug.cookieNames.join(',')}`;
+    }
+    if (request._recipientDebug.nextRequestCookies && request._recipientDebug.nextRequestCookies.length > 0) {
+      recipientDebug += ` nextReq:${request._recipientDebug.nextRequestCookies.join(',')}`;
+    }
+    if (request._recipientDebug.sampleCookieNames && request._recipientDebug.sampleCookieNames.length > 0) {
+      recipientDebug += ` samples:${request._recipientDebug.sampleCookieNames.join(';')}`;
+    }
+    if (request._recipientDebug.matchingDetails && request._recipientDebug.matchingDetails.length > 0) {
+      recipientDebug += ` matched:${request._recipientDebug.matchingDetails.join(';')}`;
+    }
+  }
+  
   document.getElementById('detailsTitle').textContent = 
-    new URL(request.url).pathname.split('/').pop() || request.url;
+    `${titleText} [idx:${requestIndex}/${totalRequests} | ${cookieCount} req: ${cookieNames}... | ${setCookieCount} set: ${setCookieNames}... | ${sourceIds.size} sources(${sourceIdList}), ${recipientIds.size} recipients(${recipientIdList})${recipientDebug}]`;
 
   // General
   const generalDiv = document.getElementById('detailsGeneral');

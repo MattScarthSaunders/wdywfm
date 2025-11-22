@@ -159,6 +159,36 @@ body {
   background: #e3f2fd;
 }
 
+.requests-table tbody tr.cookie-source {
+  background: #e8f5e9 !important;
+  border-left: 3px solid #4caf50 !important;
+}
+
+.requests-table tbody tr.cookie-source:hover {
+  background: #c8e6c9 !important;
+}
+
+.requests-table tbody tr.cookie-recipient {
+  background: #f3e5f5 !important;
+  border-left: 4px solid #9c27b0 !important;
+}
+
+.requests-table tbody tr.cookie-recipient:hover {
+  background: #e1bee7 !important;
+  border-left: 4px solid #7b1fa2 !important;
+}
+
+/* Cookie highlighting should override session highlighting */
+.requests-table tbody tr.cookie-source.session-request {
+  background: #e8f5e9 !important;
+  border-left: 3px solid #4caf50 !important;
+}
+
+.requests-table tbody tr.cookie-recipient.session-request {
+  background: #f3e5f5 !important;
+  border-left: 4px solid #9c27b0 !important;
+}
+
 .requests-table tbody tr.session-request {
   background: #fff3e0;
 }

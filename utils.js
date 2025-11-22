@@ -560,18 +560,25 @@ class CookieParser {
     
     const cookies = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader];
     return cookies.map(cookie => {
+      if (!cookie || !cookie.trim()) return null;
       const parts = cookie.split(';');
       const [nameValue] = parts;
-      const [name, value] = nameValue.split('=');
+      if (!nameValue || !nameValue.trim()) return null;
+      
+      const [name, ...valueParts] = nameValue.split('=');
+      const value = valueParts.join('='); // Handle values that contain '='
+      const trimmedName = name ? name.trim() : '';
+      if (!trimmedName) return null; // Skip empty names
       
       const cookieObj = {
-        name: name.trim(),
+        name: trimmedName,
         value: value ? value.trim() : '',
         attributes: {}
       };
 
       for (let i = 1; i < parts.length; i++) {
         const attr = parts[i].trim();
+        if (!attr) continue;
         if (attr.includes('=')) {
           const [key, val] = attr.split('=');
           cookieObj.attributes[key.toLowerCase()] = val;
@@ -581,16 +588,21 @@ class CookieParser {
       }
 
       return cookieObj;
-    });
+    }).filter(c => c !== null); // Remove null entries
   }
 
   parseCookie(cookieHeader) {
     if (!cookieHeader) return [];
     
     const cookies = cookieHeader.split(';').map(c => {
-      const [name, value] = c.trim().split('=');
-      return { name: name.trim(), value: value ? value.trim() : '' };
-    });
+      const trimmed = c.trim();
+      if (!trimmed) return null;
+      const [name, ...valueParts] = trimmed.split('=');
+      const value = valueParts.join('='); // Handle values that contain '='
+      const trimmedName = name ? name.trim() : '';
+      if (!trimmedName) return null; // Skip empty names
+      return { name: trimmedName, value: value ? value.trim() : '' };
+    }).filter(c => c !== null); // Remove null entries
     
     return cookies;
   }
