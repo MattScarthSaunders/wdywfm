@@ -204,7 +204,7 @@ onUnmounted(() => {
 
 .requests-table td {
   padding: 6px 8px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #eee; /* EEEEEEEEE! */
 }
 
 .requests-table tbody tr {
