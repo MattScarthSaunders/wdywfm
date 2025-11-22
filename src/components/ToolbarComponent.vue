@@ -28,8 +28,8 @@ defineEmits<{
 <style scoped>
 .toolbar {
   padding: 8px 12px;
-  background: #fafafa;
-  border-bottom: 1px solid #ddd;
+  background: var(--color-bg-lightest);
+  border-bottom: 1px solid var(--color-border-light);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -37,15 +37,15 @@ defineEmits<{
 
 .toolbar-btn {
   padding: 4px 12px;
-  background: #fff;
-  border: 1px solid #ccc;
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-input);
   border-radius: 3px;
   cursor: pointer;
   font-size: 11px;
 }
 
 .toolbar-btn:hover {
-  background: #f5f5f5;
+  background: var(--color-bg-light);
 }
 
 .checkbox-label {

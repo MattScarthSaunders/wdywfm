@@ -35,15 +35,15 @@ defineEmits<{
 <style scoped>
 .header {
   padding: 12px;
-  background: #f5f5f5;
-  border-bottom: 1px solid #ddd;
+  background: var(--color-bg-light);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .header h1 {
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 8px;
-  color: #1a1a1a;
+  color: var(--color-text-dark);
 }
 
 .filter-container {
@@ -64,28 +64,28 @@ defineEmits<{
 
 .filter-input:focus {
   outline: none;
-  border-color: #0078d4;
+  border-color: var(--color-primary-alt);
   box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.1);
 }
 
 .clear-btn {
   padding: 6px 10px;
-  background: #f0f0f0;
-  border: 1px solid #ccc;
+  background: var(--color-bg-hover);
+  border: 1px solid var(--color-border-input);
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
 }
 
 .clear-btn:hover {
-  background: #e0e0e0;
+  background: var(--color-border);
 }
 
 .stats-bar {
   display: flex;
   gap: 16px;
   font-size: 11px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .stats-bar span {

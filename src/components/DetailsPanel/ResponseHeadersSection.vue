@@ -77,8 +77,8 @@ async function copyResponseHeaders() {
 
 .view-mode-btn {
   padding: 4px;
-  background: #f5f5f5;
-  color: #666;
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
   border: 1px solid #ccc;
   border-radius: 3px;
   cursor: pointer;
@@ -95,23 +95,23 @@ async function copyResponseHeaders() {
 }
 
 .view-mode-btn:hover {
-  background: #e0e0e0;
-  color: #333;
+  background: var(--color-border);
+  color: var(--color-text-primary);
 }
 
 .view-mode-btn.active {
-  background: #1976d2;
+  background: var(--color-primary);
   color: white;
-  border-color: #1976d2;
+  border-color: var(--color-primary);
 }
 
 .view-mode-btn.active:hover {
-  background: #1565c0;
+  background: var(--color-primary-hover);
 }
 
 .copy-json-btn-header {
   padding: 4px;
-  background: #1976d2;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 3px;
@@ -131,11 +131,11 @@ async function copyResponseHeaders() {
 }
 
 .copy-json-btn-header:hover {
-  background: #1565c0;
+  background: var(--color-primary-hover);
 }
 
 .copy-json-btn-header.copied {
-  background: #4caf50;
+  background: var(--color-success);
 }
 </style>
 

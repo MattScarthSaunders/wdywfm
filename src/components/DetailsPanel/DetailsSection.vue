@@ -45,7 +45,7 @@ function toggleCollapse() {
   font-size: 12px;
   font-weight: 600;
   margin-bottom: 8px;
-  color: #666;
+  color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -77,7 +77,7 @@ function toggleCollapse() {
 }
 
 .section-header:hover {
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .section-toggle {
@@ -107,8 +107,8 @@ function toggleCollapse() {
 }
 
 .details-data {
-  background: #f9f9f9;
-  border: 1px solid #e0e0e0;
+  background: var(--color-bg-lighter);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   padding: 8px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
@@ -119,8 +119,8 @@ function toggleCollapse() {
 
 .toggle-view-btn {
   padding: 2px 8px;
-  background: #f5f5f5;
-  color: #333;
+  background: var(--color-bg-light);
+  color: var(--color-text-primary);
   border: 1px solid #ccc;
   border-radius: 3px;
   cursor: pointer;
@@ -132,12 +132,12 @@ function toggleCollapse() {
 }
 
 .toggle-view-btn:hover {
-  background: #e0e0e0;
+  background: var(--color-border);
 }
 
 .copy-json-btn-header {
   padding: 2px 8px;
-  background: #1976d2;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 3px;
@@ -149,11 +149,11 @@ function toggleCollapse() {
 }
 
 .copy-json-btn-header:hover {
-  background: #1565c0;
+  background: var(--color-primary-hover);
 }
 
 .copy-json-btn-header.copied {
-  background: #4caf50;
+  background: var(--color-success);
 }
 
 .checkbox-label-inline {

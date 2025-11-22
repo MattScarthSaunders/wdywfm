@@ -111,7 +111,7 @@ const cookieRecipientIds = computed(() => {
 .requests-table thead {
   position: sticky;
   top: 0;
-  background: #f5f5f5;
+  background: var(--color-bg-light);
   z-index: 10;
 }
 
@@ -119,8 +119,8 @@ const cookieRecipientIds = computed(() => {
   padding: 8px;
   text-align: left;
   font-weight: 600;
-  border-bottom: 2px solid #ddd;
-  color: #666;
+  border-bottom: 2px solid var(--color-border-light);
+  color: var(--color-text-secondary);
   font-size: 11px;
 }
 
@@ -139,40 +139,40 @@ const cookieRecipientIds = computed(() => {
 }
 
 .requests-table tbody tr:hover {
-  background: #f5f5f5;
+  background: var(--color-bg-light);
 }
 
 .requests-table tbody tr.selected {
-  background: #e3f2fd;
+  background: var(--color-primary-light);
   outline: 1px solid black;
 }
 
 .requests-table tbody tr.selected td:first-child {
-  border-left: 3px solid #2f9c19 !important;
+  border-left: 3px solid var(--color-success-border) !important;
 }
 
 .requests-table tbody tr.cookie-source {
-  background: #fff8e1 !important;
-  border-left: 3px solid #ffc107 !important;
+  background: var(--color-warning-bg-light) !important;
+  border-left: 3px solid var(--color-warning-yellow) !important;
 }
 
 .requests-table tbody tr.cookie-source:hover {
-  background: #ffecb3 !important;
+  background: var(--color-warning-bg-yellow) !important;
 }
 
 .requests-table tbody tr.cookie-recipient {
-  background: #e8f5e9 !important;
-  border-left: 4px solid #4caf50 !important;
+  background: var(--color-success-bg-light) !important;
+  border-left: 4px solid var(--color-success) !important;
 }
 
 .requests-table tbody tr.cookie-recipient:hover {
-  background: #c8e6c9 !important;
-  border-left: 4px solid #2e7d32 !important;
+  background: var(--color-success-bg) !important;
+  border-left: 4px solid var(--color-success-dark) !important;
 }
 
 
 .requests-table tbody tr.bot-detection {
-  border-left: 3px solid #f44336;
+  border-left: 3px solid var(--color-error-variant);
 }
 
 .col-name {
@@ -205,7 +205,7 @@ const cookieRecipientIds = computed(() => {
 }
 
 .resize-handle.active {
-  background: #0078d4;
+  background: var(--color-primary-alt);
 }
 
 .col-id {
@@ -213,7 +213,7 @@ const cookieRecipientIds = computed(() => {
   min-width: 50px;
   text-align: center;
   font-weight: 600;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .col-method {
@@ -259,23 +259,23 @@ const cookieRecipientIds = computed(() => {
 }
 
 .status-2xx {
-  background: #c8e6c9;
-  color: #2e7d32;
+  background: var(--color-success-bg);
+  color: var(--color-success-dark);
 }
 
 .status-3xx {
-  background: #fff9c4;
-  color: #f57f17;
+  background: var(--color-warning-bg-light);
+  color: var(--color-warning-alt);
 }
 
 .status-4xx {
-  background: #ffccbc;
-  color: #d84315;
+  background: var(--color-warning-bg);
+  color: var(--color-error-alt);
 }
 
 .status-5xx {
-  background: #ef9a9a;
-  color: #c62828;
+  background: var(--color-error-bg);
+  color: var(--color-error-dark);
 }
 
 .method {
@@ -285,29 +285,29 @@ const cookieRecipientIds = computed(() => {
 }
 
 .method-GET {
-  color: #1976d2;
+  color: var(--color-primary);
 }
 
 .method-POST {
-  color: #388e3c;
+  color: var(--color-success-alt);
 }
 
 .method-PUT {
-  color: #f57c00;
+  color: var(--color-warning-dark);
 }
 
 .method-DELETE {
-  color: #d32f2f;
+  color: var(--color-error);
 }
 
 .method-PATCH {
-  color: #7b1fa2;
+  color: var(--color-purple);
 }
 
 .session-badge {
   display: inline-block;
   padding: 2px 6px;
-  background: #ff9800;
+  background: var(--color-warning);
   color: white;
   border-radius: 3px;
   font-size: 9px;
@@ -317,7 +317,7 @@ const cookieRecipientIds = computed(() => {
 .bot-badge {
   display: inline-block;
   padding: 2px 6px;
-  background: #f44336;
+  background: var(--color-error-variant);
   color: white;
   border-radius: 3px;
   font-size: 9px;

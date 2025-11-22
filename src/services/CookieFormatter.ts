@@ -131,7 +131,36 @@ export class CookieFormatter {
   }
 
   /**
+   * Get cookie data with usage information for Vue components
+   */
+  static getCookiesWithUsage(
+    cookies: ParsedCookie[] | undefined,
+    request: NetworkRequest,
+    allRequests: NetworkRequest[]
+  ): Array<{ cookie: ParsedCookie; usageInfo: { source: { id: string | number; name: string | null }; usages: number[] } }> {
+    if (!cookies || cookies.length === 0) {
+      return [];
+    }
+    
+    // Find the index of the current request
+    const requestIndex = allRequests.findIndex(r => String(r.id) === String(request.id));
+    
+    return cookies.map(cookie => {
+      // Find all usages of this exact cookie (name + value)
+      const usageInfo = requestIndex !== -1 && request.requestNumber
+        ? this.findAllUsagesOfCookie(cookie.name, cookie.value, requestIndex, request.requestNumber, allRequests)
+        : { source: { id: request.requestNumber || '?', name: null }, usages: [] };
+      
+      return {
+        cookie,
+        usageInfo
+      };
+    });
+  }
+
+  /**
    * Format cookies as HTML for display
+   * @deprecated Use getCookiesWithUsage instead and render with Vue components
    */
   static formatCookies(
     cookies: ParsedCookie[] | undefined,

@@ -50,7 +50,7 @@ async function copyUrl() {
 
 .copy-json-btn-header {
   padding: 4px;
-  background: #1976d2;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 3px;
@@ -70,11 +70,11 @@ async function copyUrl() {
 }
 
 .copy-json-btn-header:hover {
-  background: #1565c0;
+  background: var(--color-primary-hover);
 }
 
 .copy-json-btn-header.copied {
-  background: #4caf50;
+  background: var(--color-success);
 }
 </style>
 
