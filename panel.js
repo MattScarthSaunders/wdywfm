@@ -535,7 +535,8 @@ async function processRequest(request) {
       cookies: [],
       setCookies: [],
       session: null,
-      botDetection: null
+      botDetection: null,
+      postData: request.request.postData ? (typeof request.request.postData === 'string' ? request.request.postData : request.request.postData.text || null) : null
     };
 
     // Extract request headers (normalize to lowercase for consistent access)
@@ -944,6 +945,9 @@ Timestamp: ${new Date(request.timestamp).toLocaleString()}`;
   // Update toggle button state
   updateRequestHeadersToggleButton();
 
+  // Payload
+  renderPayload(request);
+
   // Response Headers
   renderResponseHeaders(request);
   
@@ -1132,6 +1136,136 @@ function renderResponseHeaders(request) {
   }
 }
 
+function renderPayload(request) {
+  const payloadDiv = document.getElementById('detailsPayload');
+  const sectionContent = payloadDiv.closest('.section-content');
+  const isCollapsed = sectionContent && sectionContent.classList.contains('collapsed');
+  
+  let html = '';
+  let hasContent = false;
+  const payloadJson = {};
+  
+  // Parse query string parameters from URL
+  try {
+    const url = new URL(request.url);
+    if (url.search) {
+      const queryParams = new URLSearchParams(url.search);
+      if (queryParams.toString()) {
+        hasContent = true;
+        const queryParamsObj = {};
+        for (const [key, value] of queryParams.entries()) {
+          queryParamsObj[key] = value;
+        }
+        payloadJson.queryStringParameters = queryParamsObj;
+        
+        html += '<div class="payload-section">';
+        html += '<div class="payload-section-title">Query String Parameters</div>';
+        html += '<div class="payload-table">';
+        for (const [key, value] of queryParams.entries()) {
+          html += `<div class="payload-row">
+            <div class="payload-key">${escapeHtml(key)}</div>
+            <div class="payload-value">${escapeHtml(value)}</div>
+          </div>`;
+        }
+        html += '</div></div>';
+      }
+    }
+  } catch (e) {
+    // Invalid URL, skip query params
+  }
+  
+  // Parse request body (postData)
+  if (request.postData) {
+    hasContent = true;
+    const contentType = (request.requestHeaders['content-type'] || '').toLowerCase();
+    
+    if (contentType.includes('application/x-www-form-urlencoded')) {
+      // Form data
+      html += '<div class="payload-section">';
+      html += '<div class="payload-section-title">Form Data</div>';
+      html += '<div class="payload-table">';
+      
+      try {
+        const params = new URLSearchParams(request.postData);
+        const formDataObj = {};
+        for (const [key, value] of params.entries()) {
+          formDataObj[key] = value;
+        }
+        payloadJson.formData = formDataObj;
+        
+        for (const [key, value] of params.entries()) {
+          html += `<div class="payload-row">
+            <div class="payload-key">${escapeHtml(key)}</div>
+            <div class="payload-value">${escapeHtml(value)}</div>
+          </div>`;
+        }
+      } catch (e) {
+        // If parsing fails, show raw data
+        payloadJson.raw = request.postData;
+        html += `<div class="payload-row">
+          <div class="payload-value" style="grid-column: 1 / -1;">${escapeHtml(request.postData)}</div>
+        </div>`;
+      }
+      
+      html += '</div></div>';
+    } else if (contentType.includes('application/json') || contentType.includes('text/json')) {
+      // JSON data
+      html += '<div class="payload-section">';
+      html += '<div class="payload-section-title">Request Payload</div>';
+      html += '<div class="payload-json">';
+      
+      try {
+        const jsonObj = JSON.parse(request.postData);
+        payloadJson.json = jsonObj;
+        const jsonStr = JSON.stringify(jsonObj, null, 2);
+        html += `<pre class="json-display">${escapeHtml(jsonStr)}</pre>`;
+      } catch (e) {
+        // If not valid JSON, show raw data
+        payloadJson.raw = request.postData;
+        html += `<pre class="json-display">${escapeHtml(request.postData)}</pre>`;
+      }
+      
+      html += '</div></div>';
+    } else if (contentType.includes('multipart/form-data')) {
+      // Multipart form data - show raw for now
+      payloadJson.raw = request.postData;
+      html += '<div class="payload-section">';
+      html += '<div class="payload-section-title">Request Payload</div>';
+      html += '<div class="payload-raw">';
+      html += `<pre class="json-display">${escapeHtml(request.postData)}</pre>`;
+      html += '</div></div>';
+    } else {
+      // Raw payload
+      payloadJson.raw = request.postData;
+      html += '<div class="payload-section">';
+      html += '<div class="payload-section-title">Request Payload</div>';
+      html += '<div class="payload-raw">';
+      html += `<pre class="json-display">${escapeHtml(request.postData)}</pre>`;
+      html += '</div></div>';
+    }
+  }
+  
+  if (!hasContent) {
+    html = '<div style="color: #999;">No payload data</div>';
+  }
+  
+  payloadDiv.innerHTML = html;
+  
+  // Store JSON string for copy button
+  const payloadSection = document.querySelector('[data-section="payload"]');
+  if (payloadSection && hasContent) {
+    const jsonStr = JSON.stringify(payloadJson, null, 2);
+    payloadSection.dataset.json = encodeURIComponent(jsonStr);
+  }
+  
+  // Recalculate maxHeight if section is expanded to ensure all content is visible
+  if (sectionContent && !isCollapsed) {
+    setTimeout(() => {
+      sectionContent.style.maxHeight = '9999px';
+    }, 0);
+  }
+}
+
 function updateRequestHeadersToggleButton() {
   const toggleBtn = document.getElementById('requestHeadersToggle');
   if (toggleBtn) {
@@ -1195,7 +1329,8 @@ function exportData() {
       cookies: r.cookies,
       setCookies: r.setCookies,
       session: r.session,
-      botDetection: r.botDetection
+      botDetection: r.botDetection,
+      postData: r.postData
     }))
   };
 
