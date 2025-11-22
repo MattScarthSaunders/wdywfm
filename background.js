@@ -2,7 +2,7 @@
 // This extension primarily uses DevTools API, so background script is minimal
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('Network Analysis Extension installed');
+  // Extension installed
 });
 
 // Listen for messages from the panel if needed

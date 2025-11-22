@@ -4,6 +4,6 @@ chrome.devtools.panels.create(
   "icons/icon48.png",
   "panel.html",
   (panel) => {
-    console.log("Network Analysis panel created");
+    // Panel created
   }
 );

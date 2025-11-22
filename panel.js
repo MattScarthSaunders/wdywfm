@@ -108,7 +108,6 @@ function initializeEventListeners() {
           copyBtn.classList.remove('copied');
         }, 2000);
       } catch (err) {
-        console.error('Failed to copy:', err);
         // Fallback for older browsers
         const textArea = document.createElement('textarea');
         textArea.value = url;
@@ -127,7 +126,7 @@ function initializeEventListeners() {
             copyBtn.classList.remove('copied');
           }, 2000);
         } catch (err2) {
-          console.error('Fallback copy failed:', err2);
+          // Fallback copy failed
         }
         document.body.removeChild(textArea);
       }
@@ -208,7 +207,6 @@ function initializeEventListeners() {
             copyBtn.classList.remove('copied');
           }, 2000);
         } catch (err) {
-          console.error('Failed to copy:', err);
           // Fallback for older browsers
           const textArea = document.createElement('textarea');
           textArea.value = jsonStr;
@@ -226,7 +224,7 @@ function initializeEventListeners() {
               copyBtn.classList.remove('copied');
             }, 2000);
           } catch (err2) {
-            console.error('Fallback copy failed:', err2);
+            // Fallback copy failed
           }
           document.body.removeChild(textArea);
         }
@@ -245,8 +243,13 @@ function initializeEventListeners() {
         // Expanding
         header.classList.remove('collapsed');
         content.classList.remove('collapsed');
-        // Set max-height to actual content height
-        content.style.maxHeight = content.scrollHeight + 'px';
+        // Use a large max-height to ensure all content is visible
+        // Set it after DOM updates to ensure accurate calculation
+        setTimeout(() => {
+          if (!content.classList.contains('collapsed')) {
+            content.style.maxHeight = '9999px';
+          }
+        }, 0);
       } else {
         // Collapsing
         header.classList.add('collapsed');
@@ -572,7 +575,7 @@ async function processRequest(request) {
     applyFilters();
     updateStats();
   } catch (error) {
-    console.error('Error processing request:', error);
+    // Error processing request
   }
 }
 
@@ -802,37 +805,12 @@ function findCookieRecipientRequests(request) {
   if (requestIndex === -1) return recipientRequestIds;
   
   // Check all later requests
-  let checkedCount = 0;
-  let withCookiesCount = 0;
-  const sampleCookieNames = [];
-  const matchingDetails = []; // Track which cookies matched
-  let nextRequestCookies = null; // Debug: check the immediate next request
   for (let i = requestIndex + 1; i < requests.length; i++) {
     const req = requests[i];
     if (!req) continue;
     if (String(req.id) === String(request.id)) continue;
-    checkedCount++;
-    
-    // Debug: capture the immediate next request's cookies
-    if (i === requestIndex + 1 && req.cookies && Array.isArray(req.cookies)) {
-      nextRequestCookies = req.cookies
-        .filter(c => c && c.name && typeof c.name === 'string' && c.name.trim())
-        .map(c => c.name.trim().toLowerCase());
-    }
     
     if (!req.cookies || !Array.isArray(req.cookies) || req.cookies.length === 0) continue;
-    withCookiesCount++;
-    
-    // Collect sample cookie names for debugging (first 3 requests with cookies)
-    if (sampleCookieNames.length < 3 && req.cookies.length > 0) {
-      const reqCookieNames = req.cookies
-        .filter(c => c && c.name && typeof c.name === 'string' && c.name.trim())
-        .map(c => c.name.trim().toLowerCase())
-        .slice(0, 10); // Show more cookies
-      if (reqCookieNames.length > 0) {
-        sampleCookieNames.push(reqCookieNames.join(','));
-      }
-    }
     
     // Check if this request uses any cookies that the selected request sets
     req.cookies.forEach(cookie => {
@@ -840,25 +818,10 @@ function findCookieRecipientRequests(request) {
         const cookieName = cookie.name.trim().toLowerCase();
         if (cookieName.length > 0 && cookieNames.has(cookieName)) {
           recipientRequestIds.add(String(req.id));
-          // Track what matched
-          if (matchingDetails.length < 3) {
-            matchingDetails.push(`${req.id}:${cookieName}`);
-          }
         }
       }
     });
   }
-  
-  // Store debug info
-  request._recipientDebug = {
-    cookieNames: Array.from(cookieNames),
-    checkedCount,
-    withCookiesCount,
-    foundIds: Array.from(recipientRequestIds),
-    sampleCookieNames,
-    matchingDetails,
-    nextRequestCookies: nextRequestCookies || []
-  };
   
   return recipientRequestIds;
 }
@@ -901,12 +864,6 @@ function updateTableSelection() {
   const sourceRequestIds = findCookieSourceRequests(actualRequest);
   const recipientRequestIds = findCookieRecipientRequests(actualRequest);
   
-  // Add data attributes for debugging
-  if (sourceRequestIds.size > 0 || recipientRequestIds.size > 0) {
-    actualRequest._cookieSources = Array.from(sourceRequestIds);
-    actualRequest._cookieRecipients = Array.from(recipientRequestIds);
-  }
-  
   rows.forEach(row => {
     const requestId = String(row.dataset.requestId);
     const selectedId = String(actualRequest.id);
@@ -948,7 +905,8 @@ function showRequestDetails(request) {
   setTimeout(() => {
     document.querySelectorAll('.section-content').forEach(content => {
       if (!content.classList.contains('collapsed')) {
-        content.style.maxHeight = content.scrollHeight + 'px';
+        // Use a large value to ensure all content is visible
+        content.style.maxHeight = '9999px';
       }
     });
     // Ensure highlighting is applied after panel is shown
@@ -961,47 +919,7 @@ function showRequestDetails(request) {
 
   // Title
   const titleText = new URL(request.url).pathname.split('/').pop() || request.url;
-  
-  // Debug: Show cookie relationships in title
-  const sourceIds = findCookieSourceRequests(request);
-  const recipientIds = findCookieRecipientRequests(request);
-  const cookieCount = request.cookies ? request.cookies.length : 0;
-  const setCookieCount = request.setCookies ? request.setCookies.length : 0;
-  
-  // Show cookie names for debugging (first 3, normalized)
-  const cookieNames = request.cookies && request.cookies.length > 0 
-    ? request.cookies.filter(c => c && c.name && c.name.trim()).map(c => c.name.trim().toLowerCase()).slice(0, 3).join(', ') 
-    : 'none';
-  const setCookieNames = request.setCookies && request.setCookies.length > 0
-    ? request.setCookies.filter(c => c && c.name && c.name.trim()).map(c => c.name.trim().toLowerCase()).slice(0, 3).join(', ')
-    : 'none';
-  
-  // Show which request IDs were found and total requests checked
-  const sourceIdList = sourceIds.size > 0 ? Array.from(sourceIds).slice(0, 3).join(',') : 'none';
-  const recipientIdList = recipientIds.size > 0 ? Array.from(recipientIds).slice(0, 3).join(',') : 'none';
-  const totalRequests = requests.length;
-  const requestIndex = requests.findIndex(r => String(r.id) === String(request.id));
-  
-  // Add debug info for recipients
-  let recipientDebug = '';
-  if (request._recipientDebug) {
-    recipientDebug = ` | checked:${request._recipientDebug.checkedCount} w/cookies:${request._recipientDebug.withCookiesCount}`;
-    if (request._recipientDebug.cookieNames && request._recipientDebug.cookieNames.length > 0) {
-      recipientDebug += ` lookingFor:${request._recipientDebug.cookieNames.join(',')}`;
-    }
-    if (request._recipientDebug.nextRequestCookies && request._recipientDebug.nextRequestCookies.length > 0) {
-      recipientDebug += ` nextReq:${request._recipientDebug.nextRequestCookies.join(',')}`;
-    }
-    if (request._recipientDebug.sampleCookieNames && request._recipientDebug.sampleCookieNames.length > 0) {
-      recipientDebug += ` samples:${request._recipientDebug.sampleCookieNames.join(';')}`;
-    }
-    if (request._recipientDebug.matchingDetails && request._recipientDebug.matchingDetails.length > 0) {
-      recipientDebug += ` matched:${request._recipientDebug.matchingDetails.join(';')}`;
-    }
-  }
-  
-  document.getElementById('detailsTitle').textContent = 
-    `${titleText} [idx:${requestIndex}/${totalRequests} | ${cookieCount} req: ${cookieNames}... | ${setCookieCount} set: ${setCookieNames}... | ${sourceIds.size} sources(${sourceIdList}), ${recipientIds.size} recipients(${recipientIdList})${recipientDebug}]`;
+  document.getElementById('detailsTitle').textContent = titleText;
 
   // General
   const generalDiv = document.getElementById('detailsGeneral');
