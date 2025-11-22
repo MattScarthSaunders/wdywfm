@@ -38,9 +38,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import type { NetworkRequest } from './types';
-import { filterParser, sessionDetector, botDetector, cookieParser, formatter } from './utils';
+import { filterParser } from './utils';
 import HeaderComponent from './components/HeaderComponent.vue';
 import ToolbarComponent from './components/ToolbarComponent.vue';
 import RequestsTableComponent from './components/RequestsTableComponent.vue';
@@ -71,17 +71,14 @@ function applyFilters() {
   const parser = filterParser.parse(filterText.value);
   
   filteredRequests.value = requests.value.filter(request => {
-    // Apply text filter
     if (parser && !parser.matches(request)) {
       return false;
     }
     
-    // Filter out JavaScript responses
     if (hideJavaScript.value && request.type === 'script') {
       return false;
     }
     
-    // Filter out asset requests (stylesheet, image, font, media)
     if (hideAssets.value && ['stylesheet', 'image', 'font', 'media'].includes(request.type)) {
       return false;
     }

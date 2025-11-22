@@ -18,7 +18,8 @@ export default defineConfig({
         const distSrcPath = 'dist/src';
         if (existsSync(distSrcPath)) {
           const files = readdirSync(distSrcPath);
-          files.forEach(file => {
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
             if (file.endsWith('.html')) {
               const srcPath = join(distSrcPath, file);
               const destPath = join('dist', file);
@@ -35,7 +36,7 @@ export default defineConfig({
                 writeFileSync(destPath, content, 'utf-8');
               }
             }
-          });
+          }
         }
       }
     }
