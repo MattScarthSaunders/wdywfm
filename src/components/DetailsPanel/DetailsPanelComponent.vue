@@ -6,80 +6,44 @@
       <button @click="$emit('close')" class="close-btn">✕</button>
     </div>
     <div class="details-content">
-      <DetailsSection title="General" :collapsed="false">
-        <div id="detailsGeneral">{{ generalInfo }}</div>
-        <button @click="copyUrl" class="copy-json-btn-header" title="Copy URL to clipboard">Copy URL</button>
-      </DetailsSection>
+      <GeneralSection :request="request" />
       
-      <DetailsSection title="Request Headers" :collapsed="false">
-        <template #header-actions>
-          <label class="checkbox-label-inline">
-            <input 
-              type="checkbox" 
-              :checked="gradeHeaderImportance"
-              @change="$emit('update:gradeHeaderImportance', ($event.target as HTMLInputElement).checked)"
-            /> 
-            Grade importance
-          </label>
-          <button 
-            @click="requestHeadersViewMode = requestHeadersViewMode === 'json' ? 'formatted' : 'json'"
-            class="toggle-view-btn"
-          >
-            {{ requestHeadersViewMode === 'json' ? 'Formatted' : 'JSON' }}
-          </button>
-          <button @click="copyRequestHeaders" class="copy-json-btn-header">Copy JSON</button>
-        </template>
-        <div 
-          id="detailsRequestHeaders" 
-          v-html="formattedRequestHeaders"
-        ></div>
-      </DetailsSection>
+      <RequestHeadersSection 
+        :request="request"
+        :grade-header-importance="gradeHeaderImportance"
+        @update:grade-header-importance="$emit('update:gradeHeaderImportance', $event)"
+      />
       
-      <DetailsSection title="Payload" :collapsed="false">
-        <template #header-actions>
-          <button @click="copyPayload" class="copy-json-btn-header">Copy JSON</button>
-        </template>
-        <div id="detailsPayload" v-html="formattedPayload"></div>
-      </DetailsSection>
+      <PayloadSection :request="request" />
       
-      <DetailsSection title="Response Headers" :collapsed="false">
-        <template #header-actions>
-          <button 
-            @click="responseHeadersViewMode = responseHeadersViewMode === 'json' ? 'formatted' : 'json'"
-            class="toggle-view-btn"
-          >
-            {{ responseHeadersViewMode === 'json' ? 'Formatted' : 'JSON' }}
-          </button>
-          <button @click="copyResponseHeaders" class="copy-json-btn-header">Copy JSON</button>
-        </template>
-        <div id="detailsResponseHeaders" v-html="formattedResponseHeaders"></div>
-      </DetailsSection>
+      <ResponseHeadersSection 
+        :request="request"
+        :grade-header-importance="gradeHeaderImportance"
+      />
       
-      <DetailsSection title="Set-Cookies" :collapsed="false">
-        <div id="detailsCookies" v-html="formattedCookies"></div>
-      </DetailsSection>
+      <SetCookiesSection 
+        :request="request"
+        :all-requests="allRequests"
+      />
       
-      <DetailsSection title="Session Analysis" :collapsed="false">
-        <div id="detailsSession" v-html="formattedSession"></div>
-      </DetailsSection>
+      <SessionAnalysisSection :request="request" />
       
-      <DetailsSection title="Bot Detection Analysis" :collapsed="false">
-        <div id="detailsBotDetection" v-html="formattedBotDetection"></div>
-      </DetailsSection>
+      <BotDetectionSection :request="request" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
-import type { NetworkRequest } from '../types';
-import { RequestFormatter } from '../services/RequestFormatter';
-import { HeaderFormatter } from '../services/HeaderFormatter';
-import { PayloadFormatter } from '../services/PayloadFormatter';
-import { CookieFormatter } from '../services/CookieFormatter';
-import { DetailsFormatter } from '../services/DetailsFormatter';
-import { ClipboardService } from '../services/ClipboardService';
-import DetailsSection from './DetailsSection.vue';
+import { computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import type { NetworkRequest } from '../../types';
+import { RequestFormatter } from '../../services/RequestFormatter';
+import GeneralSection from './GeneralSection.vue';
+import RequestHeadersSection from './RequestHeadersSection.vue';
+import PayloadSection from './PayloadSection.vue';
+import ResponseHeadersSection from './ResponseHeadersSection.vue';
+import SetCookiesSection from './SetCookiesSection.vue';
+import SessionAnalysisSection from './SessionAnalysisSection.vue';
+import BotDetectionSection from './BotDetectionSection.vue';
 
 const props = defineProps<{
   request: NetworkRequest;
@@ -92,64 +56,9 @@ defineEmits<{
   'close': [];
 }>();
 
-const requestHeadersViewMode = ref<'json' | 'formatted'>('formatted');
-const responseHeadersViewMode = ref<'json' | 'formatted'>('formatted');
-
 const requestTitle = computed(() => {
   return RequestFormatter.getRequestTitle(props.request);
 });
-
-const generalInfo = computed(() => {
-  return DetailsFormatter.formatGeneralInfo(props.request);
-});
-
-const formattedRequestHeaders = computed(() => {
-  if (requestHeadersViewMode.value === 'json') {
-    return HeaderFormatter.formatHeadersAsJSON(props.request.requestHeaders);
-  } else {
-    return HeaderFormatter.formatHeadersForDisplay(props.request.requestHeaders, props.gradeHeaderImportance);
-  }
-});
-
-const formattedResponseHeaders = computed(() => {
-  if (responseHeadersViewMode.value === 'json') {
-    return HeaderFormatter.formatHeadersAsJSON(props.request.responseHeaders);
-  } else {
-    return HeaderFormatter.formatHeadersForDisplay(props.request.responseHeaders, props.gradeHeaderImportance);
-  }
-});
-
-const formattedPayload = computed(() => {
-  return PayloadFormatter.formatPayload(props.request);
-});
-
-const formattedCookies = computed(() => {
-  return CookieFormatter.formatCookies(props.request.setCookies, props.request, props.allRequests);
-});
-
-const formattedSession = computed(() => {
-  return DetailsFormatter.formatSession(props.request.session);
-});
-
-const formattedBotDetection = computed(() => {
-  return DetailsFormatter.formatBotDetection(props.request.botDetection);
-});
-
-async function copyUrl() {
-  await ClipboardService.copyUrl(props.request.url);
-}
-
-async function copyRequestHeaders() {
-  await ClipboardService.copyHeaders(props.request.requestHeaders);
-}
-
-async function copyResponseHeaders() {
-  await ClipboardService.copyHeaders(props.request.responseHeaders);
-}
-
-async function copyPayload() {
-  await ClipboardService.copyPayload(props.request.url, props.request.postData ?? undefined);
-}
 
 // Set up event delegation for expand/collapse buttons
 let detailsPanelClickHandler: ((e: MouseEvent) => void) | null = null;

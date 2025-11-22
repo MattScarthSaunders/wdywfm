@@ -40,7 +40,7 @@ import { filterParser, sessionDetector, botDetector, cookieParser, formatter } f
 import HeaderComponent from './components/HeaderComponent.vue';
 import ToolbarComponent from './components/ToolbarComponent.vue';
 import RequestsTableComponent from './components/RequestsTableComponent.vue';
-import DetailsPanelComponent from './components/DetailsPanelComponent.vue';
+import DetailsPanelComponent from './components/DetailsPanel/DetailsPanelComponent.vue';
 import { useNetworkMonitoring } from './composables/useNetworkMonitoring';
 import { useSettings } from './composables/useSettings';
 
