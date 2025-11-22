@@ -615,7 +615,8 @@ export class CookieParser {
 // Format utilities
 export class Formatter {
   formatSize(bytes: number): string {
-    if (!bytes || bytes === 0) return '0 B';
+    if (bytes === undefined || bytes === null || isNaN(bytes) || bytes < 0) return '-';
+    if (bytes === 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));

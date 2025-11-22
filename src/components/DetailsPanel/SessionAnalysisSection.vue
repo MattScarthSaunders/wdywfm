@@ -1,5 +1,5 @@
 <template>
-  <DetailsSection title="Session Analysis" :collapsed="false">
+  <DetailsSection title="Session Analysis" :collapsed="true">
     <div id="detailsSession" v-html="formattedSession"></div>
   </DetailsSection>
 </template>

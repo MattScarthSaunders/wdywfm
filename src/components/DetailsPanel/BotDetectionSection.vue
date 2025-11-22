@@ -1,5 +1,5 @@
 <template>
-  <DetailsSection title="Bot Detection Analysis" :collapsed="false">
+  <DetailsSection title="Bot Detection Analysis" :collapsed="true">
     <div id="detailsBotDetection" v-html="formattedBotDetection"></div>
   </DetailsSection>
 </template>

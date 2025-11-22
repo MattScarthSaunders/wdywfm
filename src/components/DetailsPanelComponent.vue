@@ -8,13 +8,13 @@
     <div class="details-content">
       <GeneralSection :request="request" />
       
-      <PayloadSection :request="request" />
-
       <RequestHeadersSection 
         :request="request"
         :grade-header-importance="gradeHeaderImportance"
         @update:grade-header-importance="$emit('update:gradeHeaderImportance', $event)"
       />
+      
+      <PayloadSection :request="request" />
       
       <ResponseHeadersSection 
         :request="request"
@@ -35,8 +35,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
-import type { NetworkRequest } from '../../types';
-import { RequestFormatter } from '../../services/RequestFormatter';
+import type { NetworkRequest } from '../types';
+import { RequestFormatter } from '../services/RequestFormatter';
 import GeneralSection from './GeneralSection.vue';
 import RequestHeadersSection from './RequestHeadersSection.vue';
 import PayloadSection from './PayloadSection.vue';
@@ -228,7 +228,6 @@ onUnmounted(() => {
 .details-content {
   flex: 1;
   overflow-y: auto;
-  scrollbar-gutter: stable;
   padding: 12px;
 }
 

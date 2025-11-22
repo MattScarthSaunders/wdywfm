@@ -1,13 +1,31 @@
 <template>
-  <DetailsSection title="Response Headers" :collapsed="false">
+  <DetailsSection title="Response Headers" :collapsed="true">
     <template #header-actions>
-      <button 
-        @click="viewMode = viewMode === 'json' ? 'formatted' : 'json'"
-        class="toggle-view-btn"
-      >
-        {{ viewMode === 'json' ? 'Formatted' : 'JSON' }}
-      </button>
-      <button @click="copyResponseHeaders" class="copy-json-btn-header">Copy JSON</button>
+      <div class="header-controls">
+        <div class="view-mode-buttons">
+          <button 
+            @click.stop="viewMode = 'formatted'"
+            :class="['view-mode-btn', { active: viewMode === 'formatted' }]"
+            title="Formatted view"
+          >
+            <span class="material-icons">description</span>
+          </button>
+          <button 
+            @click.stop="viewMode = 'json'"
+            :class="['view-mode-btn', { active: viewMode === 'json' }]"
+            title="JSON view"
+          >
+            <span class="material-icons">code</span>
+          </button>
+        </div>
+        <button 
+          @click.stop="copyResponseHeaders" 
+          :class="['copy-json-btn-header', { copied: isCopied }]"
+          :title="isCopied ? 'Copied!' : 'Copy JSON'"
+        >
+          <span class="material-icons">{{ isCopied ? 'check' : 'content_copy' }}</span>
+        </button>
+      </div>
     </template>
     <div id="detailsResponseHeaders" v-html="formattedResponseHeaders"></div>
   </DetailsSection>
@@ -26,6 +44,7 @@ const props = defineProps<{
 }>();
 
 const viewMode = ref<'json' | 'formatted'>('formatted');
+const isCopied = ref(false);
 
 const formattedResponseHeaders = computed(() => {
   if (viewMode.value === 'json') {
@@ -37,30 +56,61 @@ const formattedResponseHeaders = computed(() => {
 
 async function copyResponseHeaders() {
   await ClipboardService.copyHeaders(props.request.responseHeaders);
+  isCopied.value = true;
+  setTimeout(() => {
+    isCopied.value = false;
+  }, 2000);
 }
 </script>
 
 <style scoped>
-.toggle-view-btn {
-  padding: 2px 8px;
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.view-mode-buttons {
+  display: flex;
+  gap: 2px;
+}
+
+.view-mode-btn {
+  padding: 4px;
   background: #f5f5f5;
-  color: #333;
+  color: #666;
   border: 1px solid #ccc;
   border-radius: 3px;
   cursor: pointer;
-  font-size: 10px;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  margin-left: auto;
-  margin-right: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
 }
 
-.toggle-view-btn:hover {
+.view-mode-btn .material-icons {
+  font-size: 16px;
+}
+
+.view-mode-btn:hover {
   background: #e0e0e0;
+  color: #333;
+}
+
+.view-mode-btn.active {
+  background: #1976d2;
+  color: white;
+  border-color: #1976d2;
+}
+
+.view-mode-btn.active:hover {
+  background: #1565c0;
 }
 
 .copy-json-btn-header {
-  padding: 2px 8px;
+  padding: 4px;
   background: #1976d2;
   color: white;
   border: none;
@@ -69,7 +119,15 @@ async function copyResponseHeaders() {
   font-size: 10px;
   font-weight: 500;
   transition: background-color 0.2s;
-  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.copy-json-btn-header .material-icons {
+  font-size: 16px;
 }
 
 .copy-json-btn-header:hover {

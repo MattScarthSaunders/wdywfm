@@ -1,5 +1,5 @@
 <template>
-  <DetailsSection title="Set-Cookies" :collapsed="false">
+  <DetailsSection title="Set-Cookies" :collapsed="true">
     <div id="detailsCookies" v-html="formattedCookies"></div>
   </DetailsSection>
 </template>

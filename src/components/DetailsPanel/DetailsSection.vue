@@ -5,8 +5,10 @@
       :class="{ collapsed: isCollapsed }"
       @click="toggleCollapse"
     >
-      <span class="section-toggle">{{ isCollapsed ? '▶' : '▼' }}</span>
-      {{ title }}
+      <span class="section-title-group">
+        <span class="section-toggle">▼</span>
+        {{ title }}
+      </span>
       <slot name="header-actions"></slot>
     </h3>
     <div 
@@ -56,6 +58,22 @@ function toggleCollapse() {
   gap: 6px;
   padding: 4px 0;
   transition: color 0.2s;
+  width: 100%;
+}
+
+.section-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+:deep(.header-controls) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .section-header:hover {
@@ -73,7 +91,7 @@ function toggleCollapse() {
 }
 
 .section-content {
-  transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.3s ease, padding 0.3s ease;
+  transition: max-height 0.2s ease, opacity 0.15s ease, margin 0.2s ease, padding 0.2s ease;
   overflow: hidden;
 }
 
@@ -85,6 +103,7 @@ function toggleCollapse() {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   border: none;
+  transition: max-height 0.1s ease, opacity 0.1s ease, margin 0.1s ease, padding 0.1s ease;
 }
 
 .details-data {
