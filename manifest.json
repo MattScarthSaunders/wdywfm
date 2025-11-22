@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Network Analysis Extension",
+  "version": "1.0.0",
+  "description": "Advanced network request analysis with session tracking and bot detection",
+  "permissions": [
+    "storage",
+    "webRequest",
+    "cookies"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "devtools_page": "devtools.html",
+  "background": {
+    "service_worker": "background.js"
+  }
+}
