@@ -4,9 +4,9 @@
       <thead>
         <tr>
           <th class="col-id">ID</th>
-          <th class="col-name">
+          <th ref="nameColumnRef" class="col-name" :style="{ width: nameColumnWidth + 'px' }">
             <span>Name</span>
-            <div class="resize-handle" data-column="name"></div>
+            <div ref="nameResizeHandleRef" class="resize-handle" :class="{ active: isResizingName }" data-column="name"></div>
           </th>
           <th class="col-method">Method</th>
           <th class="col-status">Status</th>
@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue';
 import type { NetworkRequest } from '../types';
 import { CookieTracker } from '../services/CookieTracker';
 import { RequestFormatter } from '../services/RequestFormatter';
@@ -78,6 +78,13 @@ defineEmits<{
   selectRequest: [request: NetworkRequest];
 }>();
 
+const nameColumnRef = ref<HTMLElement | null>(null);
+const nameResizeHandleRef = ref<HTMLElement | null>(null);
+const nameColumnWidth = ref(400); // Default width, will be updated on mount
+const isResizingName = ref(false);
+const startX = ref(0);
+const startWidth = ref(0);
+
 // Compute cookie source and recipient IDs based on selected request
 const cookieSourceIds = computed(() => {
   if (!props.selectedRequest) {
@@ -91,6 +98,76 @@ const cookieRecipientIds = computed(() => {
     return new Set<string>();
   }
   return CookieTracker.findCookieRecipientRequests(props.selectedRequest, props.allRequests);
+});
+
+function loadNameColumnWidth() {
+  chrome.storage.local.get(['nameColumnWidth'], (result) => {
+    if (result.nameColumnWidth !== undefined) {
+      nameColumnWidth.value = Math.max(200, result.nameColumnWidth);
+    } else {
+      // Calculate initial width based on 40% of viewport or table width
+      const table = document.querySelector('.requests-table') as HTMLElement;
+      if (table) {
+        nameColumnWidth.value = Math.max(200, table.offsetWidth * 0.4);
+      } else {
+        nameColumnWidth.value = 400; // fallback
+      }
+    }
+  });
+}
+
+function saveNameColumnWidth() {
+  chrome.storage.local.set({ nameColumnWidth: nameColumnWidth.value });
+}
+
+function handleNameMouseDown(e: MouseEvent) {
+  if (!nameResizeHandleRef.value || !nameColumnRef.value) return;
+  
+  isResizingName.value = true;
+  startX.value = e.clientX;
+  startWidth.value = nameColumnRef.value.offsetWidth;
+  
+  document.addEventListener('mousemove', handleNameMouseMove);
+  document.addEventListener('mouseup', handleNameMouseUp);
+  e.preventDefault();
+}
+
+function handleNameMouseMove(e: MouseEvent) {
+  if (!isResizingName.value || !nameColumnRef.value) return;
+  
+  const deltaX = e.clientX - startX.value;
+  const newWidth = startWidth.value + deltaX;
+  const minWidth = 200;
+  
+  nameColumnWidth.value = Math.max(minWidth, newWidth);
+}
+
+function handleNameMouseUp() {
+  if (isResizingName.value) {
+    isResizingName.value = false;
+    saveNameColumnWidth();
+  }
+  
+  document.removeEventListener('mousemove', handleNameMouseMove);
+  document.removeEventListener('mouseup', handleNameMouseUp);
+}
+
+onMounted(() => {
+  loadNameColumnWidth();
+  // Use nextTick to ensure DOM is ready
+  nextTick(() => {
+    if (nameResizeHandleRef.value) {
+      nameResizeHandleRef.value.addEventListener('mousedown', handleNameMouseDown);
+    }
+  });
+});
+
+onUnmounted(() => {
+  if (nameResizeHandleRef.value) {
+    nameResizeHandleRef.value.removeEventListener('mousedown', handleNameMouseDown);
+  }
+  document.removeEventListener('mousemove', handleNameMouseMove);
+  document.removeEventListener('mouseup', handleNameMouseUp);
 });
 </script>
 
@@ -176,7 +253,6 @@ const cookieRecipientIds = computed(() => {
 }
 
 .col-name {
-  width: 40%;
   min-width: 200px;
   position: relative;
   overflow: hidden;

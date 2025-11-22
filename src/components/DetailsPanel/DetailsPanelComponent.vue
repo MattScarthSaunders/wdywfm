@@ -1,6 +1,6 @@
 <template>
-  <div id="detailsPanel" class="details-panel">
-    <div class="panel-resize-handle"></div>
+  <div id="detailsPanel" ref="panelRef" class="details-panel" :style="{ width: panelWidth + 'px' }">
+    <div ref="resizeHandleRef" class="panel-resize-handle" :class="{ active: isResizing }"></div>
     <div class="details-header">
       <h2 id="detailsTitle">{{ requestTitle }}</h2>
       <button @click="$emit('close')" class="close-btn">✕</button>
@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 import type { NetworkRequest } from '../../types';
 import { RequestFormatter } from '../../services/RequestFormatter';
 import GeneralSection from './sections/GeneralSection.vue';
@@ -56,11 +56,76 @@ defineEmits<{
   'close': [];
 }>();
 
+const panelRef = ref<HTMLElement | null>(null);
+const resizeHandleRef = ref<HTMLElement | null>(null);
+const panelWidth = ref(400);
+const isResizing = ref(false);
+const startX = ref(0);
+const startWidth = ref(0);
+
 const requestTitle = computed(() => {
   return RequestFormatter.getRequestTitle(props.request);
 });
 
-// Event delegation is no longer needed - all expand/collapse is handled by Vue components
+function loadPanelWidth() {
+  chrome.storage.local.get(['detailsPanelWidth'], (result) => {
+    if (result.detailsPanelWidth !== undefined) {
+      panelWidth.value = Math.max(300, Math.min(result.detailsPanelWidth, window.innerWidth * 0.9));
+    }
+  });
+}
+
+function savePanelWidth() {
+  chrome.storage.local.set({ detailsPanelWidth: panelWidth.value });
+}
+
+function handleMouseDown(e: MouseEvent) {
+  if (!resizeHandleRef.value || !panelRef.value) return;
+  
+  isResizing.value = true;
+  startX.value = e.clientX;
+  startWidth.value = panelRef.value.offsetWidth;
+  
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', handleMouseUp);
+  e.preventDefault();
+}
+
+function handleMouseMove(e: MouseEvent) {
+  if (!isResizing.value || !panelRef.value) return;
+  
+  const deltaX = startX.value - e.clientX; // Inverted because panel is on the right
+  const newWidth = startWidth.value + deltaX;
+  const minWidth = 300;
+  const maxWidth = window.innerWidth * 0.9;
+  
+  panelWidth.value = Math.max(minWidth, Math.min(maxWidth, newWidth));
+}
+
+function handleMouseUp() {
+  if (isResizing.value) {
+    isResizing.value = false;
+    savePanelWidth();
+  }
+  
+  document.removeEventListener('mousemove', handleMouseMove);
+  document.removeEventListener('mouseup', handleMouseUp);
+}
+
+onMounted(() => {
+  loadPanelWidth();
+  if (resizeHandleRef.value) {
+    resizeHandleRef.value.addEventListener('mousedown', handleMouseDown);
+  }
+});
+
+onUnmounted(() => {
+  if (resizeHandleRef.value) {
+    resizeHandleRef.value.removeEventListener('mousedown', handleMouseDown);
+  }
+  document.removeEventListener('mousemove', handleMouseMove);
+  document.removeEventListener('mouseup', handleMouseUp);
+});
 </script>
 
 <style scoped>
@@ -68,7 +133,6 @@ const requestTitle = computed(() => {
   position: fixed;
   right: 0;
   top: 0;
-  width: 400px;
   min-width: 300px;
   max-width: 90vw;
   height: 100vh;

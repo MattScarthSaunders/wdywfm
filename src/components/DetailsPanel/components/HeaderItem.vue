@@ -1,6 +1,6 @@
 <template>
   <div class="header-row" :class="importanceClass">
-    <div class="header-name" :class="importanceClass">{{ header.name }}</div>
+    <div class="header-name" :class="importanceClass" :title="header.name">{{ header.name }}</div>
     <div class="header-value" :class="importanceClass">
       <span class="header-value-text">{{ displayValue }}</span>
       <span 
@@ -61,6 +61,11 @@ function toggleExpand() {
   font-weight: 600;
   color: var(--color-primary);
   min-width: 150px;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .header-value {

@@ -30,7 +30,7 @@
     <HeadersList
       v-if="viewMode === 'formatted'"
       :headers="headers"
-      :grade-importance="gradeHeaderImportance"
+      :grade-importance="false"
     />
     <HeadersJson
       v-else
@@ -57,7 +57,7 @@ const viewMode = ref<'json' | 'formatted'>('formatted');
 const isCopied = ref(false);
 
 const headers = computed(() => {
-  return HeaderFormatter.getHeaders(props.request.responseHeaders, props.gradeHeaderImportance);
+  return HeaderFormatter.getHeaders(props.request.responseHeaders, false);
 });
 
 async function copyResponseHeaders() {
