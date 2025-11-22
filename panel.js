@@ -11,6 +11,21 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeEventListeners();
   startNetworkMonitoring();
   loadSettings();
+  
+  // Update panel width on window resize
+  window.addEventListener('resize', () => {
+    updateDetailsPanelWidth();
+    constrainTableWidth();
+  });
+  
+  // Constrain table width on initial load
+  constrainTableWidth();
+  
+  // Initialize column resize after a short delay to ensure table is rendered
+  setTimeout(() => {
+    initializeColumnResize();
+    initializePanelResize();
+  }, 100);
 });
 
 function initializeEventListeners() {
@@ -55,6 +70,324 @@ function initializeEventListeners() {
     selectedRequest = null;
     updateTableSelection();
   });
+
+  // Event delegation for header expand/collapse and copy button
+  const detailsPanel = document.getElementById('detailsPanel');
+  detailsPanel.addEventListener('click', (e) => {
+    if (e.target.classList.contains('header-expand')) {
+      e.stopPropagation();
+      const expandBtn = e.target;
+      const headerId = expandBtn.dataset.id;
+      const fullValue = expandBtn.dataset.full;
+      const textSpan = document.getElementById(`${headerId}-text`);
+      
+      if (expandBtn.classList.contains('expanded')) {
+        // Collapse
+        textSpan.textContent = fullValue.substring(0, 100);
+        expandBtn.textContent = '[...]';
+        expandBtn.classList.remove('expanded');
+      } else {
+        // Expand
+        textSpan.textContent = fullValue;
+        expandBtn.textContent = '[collapse]';
+        expandBtn.classList.add('expanded');
+      }
+    } else if (e.target.classList.contains('copy-json-btn') || e.target.classList.contains('copy-json-btn-header')) {
+      e.stopPropagation();
+      const copyBtn = e.target;
+      let jsonStr;
+      
+      // Get JSON from button data attribute or from section header
+      if (copyBtn.dataset.json) {
+        jsonStr = decodeURIComponent(copyBtn.dataset.json);
+      } else {
+        const sectionHeader = copyBtn.closest('.section-header');
+        if (sectionHeader && sectionHeader.dataset.json) {
+          jsonStr = decodeURIComponent(sectionHeader.dataset.json);
+        } else {
+          return;
+        }
+      }
+      
+      (async () => {
+        try {
+          await navigator.clipboard.writeText(jsonStr);
+          const originalText = copyBtn.textContent;
+          copyBtn.textContent = 'Copied!';
+          copyBtn.classList.add('copied');
+          setTimeout(() => {
+            copyBtn.textContent = originalText;
+            copyBtn.classList.remove('copied');
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy:', err);
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = jsonStr;
+          textArea.style.position = 'fixed';
+          textArea.style.opacity = '0';
+          document.body.appendChild(textArea);
+          textArea.select();
+          try {
+            document.execCommand('copy');
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = 'Copied!';
+            copyBtn.classList.add('copied');
+            setTimeout(() => {
+              copyBtn.textContent = originalText;
+              copyBtn.classList.remove('copied');
+            }, 2000);
+          } catch (err2) {
+            console.error('Fallback copy failed:', err2);
+          }
+          document.body.removeChild(textArea);
+        }
+      })();
+    } else if ((e.target.classList.contains('section-header') || e.target.closest('.section-header')) && 
+               !e.target.classList.contains('copy-json-btn-header') && 
+               !e.target.closest('.copy-json-btn-header')) {
+      // Toggle section collapse (but not if clicking the copy button)
+      const header = e.target.classList.contains('section-header') ? e.target : e.target.closest('.section-header');
+      const section = header.closest('.details-section');
+      const content = section.querySelector('.section-content');
+      
+      if (header.classList.contains('collapsed')) {
+        // Expanding
+        header.classList.remove('collapsed');
+        content.classList.remove('collapsed');
+        // Set max-height to actual content height
+        content.style.maxHeight = content.scrollHeight + 'px';
+      } else {
+        // Collapsing
+        header.classList.add('collapsed');
+        content.style.maxHeight = content.scrollHeight + 'px';
+        // Force reflow
+        content.offsetHeight;
+        content.classList.add('collapsed');
+      }
+    }
+  });
+
+  // Column resize functionality will be initialized in DOMContentLoaded
+  // Panel resize functionality will be initialized in DOMContentLoaded
+}
+
+let isResizing = false;
+let startX = 0;
+let startNameWidth = 0;
+let startOtherColumnsWidth = 0;
+let handleMouseMove = null;
+let handleMouseUp = null;
+
+// Use event delegation for column resize
+document.addEventListener('mousedown', (e) => {
+  const resizeHandle = e.target.closest('.resize-handle[data-column="name"]');
+  if (!resizeHandle) return;
+  
+  e.preventDefault();
+  e.stopPropagation();
+  e.stopImmediatePropagation();
+  
+  isResizing = true;
+  startX = e.clientX;
+  const nameHeader = document.querySelector('.col-name');
+  const table = nameHeader?.closest('table');
+  const tableContainer = table?.closest('.table-container');
+  
+  if (!nameHeader || !table || !tableContainer) {
+    isResizing = false;
+    return;
+  }
+  
+  // Ensure table width matches container
+  const containerWidth = tableContainer.getBoundingClientRect().width;
+  table.style.width = `${containerWidth}px`;
+  
+  // Get current widths
+  const nameRect = nameHeader.getBoundingClientRect();
+  startNameWidth = nameRect.width;
+  
+  // Calculate total width of other columns and store original widths
+  const allHeaders = Array.from(table.querySelectorAll('thead th'));
+  let otherColumnsWidth = 0;
+  allHeaders.forEach(header => {
+    if (!header.classList.contains('col-name')) {
+      const width = header.getBoundingClientRect().width;
+      header.dataset.originalWidth = width;
+      otherColumnsWidth += width;
+    }
+  });
+  startOtherColumnsWidth = otherColumnsWidth;
+  
+  resizeHandle.classList.add('active');
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+  
+  // Create handlers
+  handleMouseMove = (moveEvent) => {
+    if (!isResizing) return;
+    
+    moveEvent.preventDefault();
+    const diff = moveEvent.clientX - startX;
+    
+    const containerWidth = tableContainer.getBoundingClientRect().width;
+    const minNameWidth = 200;
+    const maxNameWidth = containerWidth - 300;
+    
+    let newNameWidth = Math.max(minNameWidth, Math.min(maxNameWidth, startNameWidth + diff));
+    const remainingWidth = containerWidth - newNameWidth;
+    
+    const allHeaders = Array.from(table.querySelectorAll('thead th')).filter(h => !h.classList.contains('col-name'));
+    
+    nameHeader.style.width = `${newNameWidth}px`;
+    nameHeader.style.minWidth = `${newNameWidth}px`;
+    
+    if (startOtherColumnsWidth > 0 && allHeaders.length > 0) {
+      allHeaders.forEach(header => {
+        const originalWidth = parseFloat(header.dataset.originalWidth || header.getBoundingClientRect().width);
+        const proportion = originalWidth / startOtherColumnsWidth;
+        const newWidth = Math.max(50, remainingWidth * proportion);
+        header.style.width = `${newWidth}px`;
+        header.style.minWidth = `${newWidth}px`;
+      });
+    }
+    
+    table.style.width = `${containerWidth}px`;
+    updateDetailsPanelWidth();
+  };
+  
+  handleMouseUp = () => {
+    if (isResizing) {
+      isResizing = false;
+      resizeHandle.classList.remove('active');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      if (handleMouseMove) {
+        document.removeEventListener('mousemove', handleMouseMove);
+        handleMouseMove = null;
+      }
+      if (handleMouseUp) {
+        document.removeEventListener('mouseup', handleMouseUp);
+        handleMouseUp = null;
+      }
+    }
+  };
+  
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', handleMouseUp);
+});
+
+function initializeColumnResize() {
+  // Handlers are now attached via event delegation above
+}
+
+let isPanelResizing = false;
+let panelStartX = 0;
+let panelStartWidth = 0;
+let handlePanelMouseMove = null;
+let handlePanelMouseUp = null;
+
+// Use event delegation for panel resize
+document.addEventListener('mousedown', (e) => {
+  const resizeHandle = e.target.closest('.panel-resize-handle');
+  if (!resizeHandle) return;
+  
+  e.preventDefault();
+  e.stopPropagation();
+  e.stopImmediatePropagation();
+  
+  isPanelResizing = true;
+  panelStartX = e.clientX;
+  const panel = document.getElementById('detailsPanel');
+  
+  if (!panel || panel.classList.contains('hidden')) {
+    isPanelResizing = false;
+    return;
+  }
+  
+  const rect = panel.getBoundingClientRect();
+  panelStartWidth = rect.width;
+  
+  resizeHandle.classList.add('active');
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+  
+  // Create handlers
+  handlePanelMouseMove = (moveEvent) => {
+    if (!isPanelResizing) return;
+    
+    moveEvent.preventDefault();
+    const diff = panelStartX - moveEvent.clientX; // Inverted because panel is on the right
+    
+    if (!panel || panel.classList.contains('hidden')) return;
+    
+    const minWidth = 300;
+    const maxWidth = window.innerWidth * 0.9;
+    
+    let newWidth = Math.max(minWidth, Math.min(maxWidth, panelStartWidth + diff));
+    
+    panel.style.width = `${newWidth}px`;
+    panel.dataset.manuallyResized = 'true';
+  };
+  
+  handlePanelMouseUp = () => {
+    if (isPanelResizing) {
+      isPanelResizing = false;
+      resizeHandle.classList.remove('active');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      if (handlePanelMouseMove) {
+        document.removeEventListener('mousemove', handlePanelMouseMove);
+        handlePanelMouseMove = null;
+      }
+      if (handlePanelMouseUp) {
+        document.removeEventListener('mouseup', handlePanelMouseUp);
+        handlePanelMouseUp = null;
+      }
+    }
+  };
+  
+  document.addEventListener('mousemove', handlePanelMouseMove);
+  document.addEventListener('mouseup', handlePanelMouseUp);
+});
+
+function initializePanelResize() {
+  // Handlers are now attached via event delegation above
+}
+
+function constrainTableWidth() {
+  const table = document.querySelector('.requests-table');
+  const tableContainer = document.querySelector('.table-container');
+  
+  if (!table || !tableContainer) return;
+  
+  const containerWidth = tableContainer.getBoundingClientRect().width;
+  table.style.width = `${containerWidth}px`;
+  table.style.maxWidth = `${containerWidth}px`;
+}
+
+function updateDetailsPanelWidth() {
+  const panel = document.getElementById('detailsPanel');
+  if (panel.classList.contains('hidden')) return;
+
+  const tableContainer = document.querySelector('.table-container');
+  const nameHeader = document.querySelector('.col-name');
+  
+  if (!tableContainer || !nameHeader) return;
+
+  const containerWidth = tableContainer.offsetWidth;
+  const nameColumnWidth = nameHeader.offsetWidth;
+  
+  // If panel has been manually resized, don't override it unless it exceeds constraints
+  const currentPanelWidth = panel.offsetWidth;
+  const minWidth = 300;
+  const maxWidth = Math.min(containerWidth, nameColumnWidth, window.innerWidth * 0.9);
+  
+  // Only update if current width is outside valid range or if it's the default width
+  if (currentPanelWidth < minWidth || currentPanelWidth > maxWidth || !panel.dataset.manuallyResized) {
+    const panelWidth = Math.min(containerWidth, nameColumnWidth);
+    panel.style.width = `${panelWidth}px`;
+  }
 }
 
 function startNetworkMonitoring() {
@@ -192,6 +525,9 @@ function renderTable() {
     const row = createTableRow(request, index);
     tbody.appendChild(row);
   });
+  
+  // Ensure table width is constrained after rendering
+  setTimeout(constrainTableWidth, 0);
 }
 
 function createTableRow(request, index) {
@@ -308,6 +644,18 @@ function showRequestDetails(request) {
   const panel = document.getElementById('detailsPanel');
   panel.classList.remove('hidden');
 
+  // Update panel width
+  updateDetailsPanelWidth();
+
+  // Initialize section max-heights
+  setTimeout(() => {
+    document.querySelectorAll('.section-content').forEach(content => {
+      if (!content.classList.contains('collapsed')) {
+        content.style.maxHeight = content.scrollHeight + 'px';
+      }
+    });
+  }, 0);
+
   // Title
   document.getElementById('detailsTitle').textContent = 
     new URL(request.url).pathname.split('/').pop() || request.url;
@@ -324,7 +672,14 @@ Timestamp: ${new Date(request.timestamp).toLocaleString()}`;
 
   // Request Headers
   const requestHeadersDiv = document.getElementById('detailsRequestHeaders');
-  requestHeadersDiv.innerHTML = formatHeadersForDisplay(request.requestHeaders);
+  requestHeadersDiv.innerHTML = formatRequestHeadersAsJSON(request.requestHeaders);
+  
+  // Store JSON string for copy button
+  const requestHeadersSection = document.querySelector('[data-section="requestHeaders"]');
+  if (requestHeadersSection) {
+    const jsonStr = JSON.stringify(request.requestHeaders, null, 2);
+    requestHeadersSection.dataset.json = encodeURIComponent(jsonStr);
+  }
 
   // Response Headers
   const responseHeadersDiv = document.getElementById('detailsResponseHeaders');
@@ -381,15 +736,32 @@ Timestamp: ${new Date(request.timestamp).toLocaleString()}`;
   if (request.botDetection.isBotDetection) {
     let html = `<div style="color: #f44336; font-weight: 600; margin-bottom: 8px;">
       ⚠ Bot Detection Detected (${request.botDetection.confidence} confidence)
-    </div>
-    <div style="margin-top: 8px;"><strong>Indicators:</strong></div>
-    <ul style="margin-top: 4px; padding-left: 20px;">`;
+    </div>`;
     
-    request.botDetection.indicators.forEach(indicator => {
-      html += `<li style="margin-bottom: 4px;">${escapeHtml(indicator)}</li>`;
-    });
+    // Show matched providers
+    if (request.botDetection.providers && request.botDetection.providers.length > 0) {
+      html += `<div style="margin-top: 12px; margin-bottom: 8px;"><strong>Matched Providers:</strong></div>
+      <div style="margin-bottom: 12px;">`;
+      
+      request.botDetection.providers.forEach(provider => {
+        html += `<span class="provider-badge" style="display: inline-block; padding: 4px 8px; margin: 2px 4px 2px 0; background: #e3f2fd; color: #1976d2; border-radius: 4px; font-size: 10px; font-weight: 500;">${escapeHtml(provider)}</span>`;
+      });
+      
+      html += `</div>`;
+    }
     
-    html += '</ul>';
+    // Show indicators
+    if (request.botDetection.indicators && request.botDetection.indicators.length > 0) {
+      html += `<div style="margin-top: 8px;"><strong>Indicators:</strong></div>
+      <ul style="margin-top: 4px; padding-left: 20px;">`;
+      
+      request.botDetection.indicators.forEach(indicator => {
+        html += `<li style="margin-bottom: 4px;">${escapeHtml(indicator)}</li>`;
+      });
+      
+      html += '</ul>';
+    }
+    
     botDiv.innerHTML = html;
   } else {
     botDiv.textContent = 'No bot detection measures identified';
@@ -404,11 +776,32 @@ function formatHeadersForDisplay(headers) {
   let html = '';
   for (const [key, value] of Object.entries(headers)) {
     const val = Array.isArray(value) ? value.join(', ') : value;
+    const valStr = String(val);
+    const isLong = valStr.length > 100;
+    const truncatedVal = isLong ? valStr.substring(0, 100) : valStr;
+    const headerId = `header-${key.replace(/[^a-zA-Z0-9]/g, '-')}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     html += `<div class="header-row">
       <div class="header-name">${escapeHtml(key)}</div>
-      <div class="header-value">${escapeHtml(String(val))}</div>
+      <div class="header-value">
+        <span class="header-value-text" id="${headerId}-text">${escapeHtml(truncatedVal)}</span>
+        ${isLong ? `<span class="header-expand" id="${headerId}-expand" data-full="${escapeHtml(valStr)}" data-id="${headerId}">[...]</span>` : ''}
+      </div>
     </div>`;
   }
+  
+  return html;
+}
+
+function formatRequestHeadersAsJSON(headers) {
+  if (!headers || Object.keys(headers).length === 0) {
+    return '<div style="color: #999;">No headers</div>';
+  }
+
+  const jsonStr = JSON.stringify(headers, null, 2);
+  
+  let html = `<pre class="json-display">${escapeHtml(jsonStr)}</pre>`;
+  
   return html;
 }
 

@@ -111,12 +111,14 @@ body {
 .table-container {
   flex: 1;
   overflow: auto;
+  overflow-x: hidden;
 }
 
 .requests-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 11px;
+  table-layout: fixed;
 }
 
 .requests-table thead {
@@ -133,6 +135,10 @@ body {
   border-bottom: 2px solid #ddd;
   color: #666;
   font-size: 11px;
+}
+
+.requests-table th.col-name {
+  padding-right: 12px;
 }
 
 .requests-table td {
@@ -168,6 +174,34 @@ body {
 .col-name {
   width: 40%;
   min-width: 200px;
+  position: relative;
+  overflow: hidden;
+}
+
+.col-name span {
+  display: block;
+  padding-right: 8px;
+}
+
+.resize-handle {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  background: rgba(0, 120, 212, 0.1);
+  z-index: 100;
+  touch-action: none;
+  pointer-events: auto;
+}
+
+.resize-handle:hover {
+  background: rgba(0, 120, 212, 0.5);
+}
+
+.resize-handle.active {
+  background: #0078d4;
 }
 
 .col-method {
@@ -283,6 +317,8 @@ body {
   right: 0;
   top: 0;
   width: 400px;
+  min-width: 300px;
+  max-width: 90vw;
   height: 100vh;
   background: white;
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
@@ -290,6 +326,27 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.panel-resize-handle {
+  position: absolute;
+  left: -2px;
+  top: 0;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  background: rgba(0, 120, 212, 0.1);
+  z-index: 1002;
+  touch-action: none;
+  pointer-events: auto;
+}
+
+.panel-resize-handle:hover {
+  background: rgba(0, 120, 212, 0.5);
+}
+
+.panel-resize-handle.active {
+  background: #0078d4;
 }
 
 .details-panel.hidden {
@@ -347,6 +404,66 @@ body {
   letter-spacing: 0.5px;
 }
 
+.section-header {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  transition: color 0.2s;
+}
+
+.section-header:hover {
+  color: #333;
+}
+
+.copy-json-btn-header {
+  padding: 2px 8px;
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  margin-left: auto;
+}
+
+.copy-json-btn-header:hover {
+  background: #1565c0;
+}
+
+.copy-json-btn-header.copied {
+  background: #4caf50;
+}
+
+.section-toggle {
+  font-size: 10px;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+.section-header.collapsed .section-toggle {
+  transform: rotate(-90deg);
+}
+
+.section-content {
+  transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.3s ease, padding 0.3s ease;
+  overflow: hidden;
+}
+
+.section-content.collapsed {
+  max-height: 0 !important;
+  opacity: 0;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border: none;
+}
+
 .details-data {
   background: #f9f9f9;
   border: 1px solid #e0e0e0;
@@ -373,6 +490,59 @@ body {
 .details-data .header-value {
   color: #333;
   flex: 1;
+  word-break: break-word;
+}
+
+.header-expand {
+  color: #1976d2;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-left: 4px;
+  font-size: 10px;
+  user-select: none;
+}
+
+.header-expand:hover {
+  color: #1565c0;
+}
+
+.header-expand.expanded {
+  color: #d32f2f;
+}
+
+.copy-json-btn {
+  padding: 4px 12px;
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.copy-json-btn:hover {
+  background: #1565c0;
+}
+
+.copy-json-btn.copied {
+  background: #4caf50;
+}
+
+.json-display {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 12px;
+  margin: 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .cookie-item {

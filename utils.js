@@ -233,19 +233,273 @@ class BotDetector {
       /device.*id/i,
       /browser.*id/i
     ];
+
+    // Known bot-detection providers with their identifying characteristics
+    this.botDetectionProviders = [
+      {
+        name: 'Cloudflare',
+        patterns: [
+          { type: 'header', name: 'cf-ray', regex: null },
+          { type: 'header', name: 'cf-connecting-ip', regex: null },
+          { type: 'header', name: 'cf-visitor', regex: null },
+          { type: 'header', name: 'cf-ipcountry', regex: null },
+          { type: 'header', name: 'cf-ray', regex: null },
+          { type: 'server', value: 'cloudflare', regex: /cloudflare/i },
+          { type: 'cookie', name: '__cf_bm', regex: null },
+          { type: 'cookie', name: 'cf_clearance', regex: null },
+          { type: 'url', regex: /cloudflare/i }
+        ]
+      },
+      {
+        name: 'DataDome',
+        patterns: [
+          { type: 'header', name: 'x-datadome', regex: /^x-datadome/i },
+          { type: 'cookie', name: 'datadome', regex: /datadome/i },
+          { type: 'url', regex: /datadome/i }
+        ]
+      },
+      {
+        name: 'PerimeterX',
+        patterns: [
+          { type: 'header', name: 'x-px', regex: /^x-px/i },
+          { type: 'cookie', name: '_px', regex: /^_px/i },
+          { type: 'cookie', name: 'px-captcha', regex: null },
+          { type: 'url', regex: /perimeterx|px-captcha/i }
+        ]
+      },
+      {
+        name: 'Imperva (Incapsula)',
+        patterns: [
+          { type: 'header', name: 'x-iinfo', regex: null },
+          { type: 'header', name: 'x-cdn', regex: null },
+          { type: 'cookie', name: 'incap_ses', regex: null },
+          { type: 'cookie', name: 'visid_incap', regex: null },
+          { type: 'server', value: 'incapsula', regex: /incapsula/i },
+          { type: 'url', regex: /incapsula|imperva/i }
+        ]
+      },
+      {
+        name: 'Akamai',
+        patterns: [
+          { type: 'header', name: 'x-akamai', regex: /^x-akamai/i },
+          { type: 'server', value: 'akamai', regex: /akamai/i },
+          { type: 'via', value: 'akamai', regex: /akamai/i },
+          { type: 'url', regex: /akamai/i }
+        ]
+      },
+      {
+        name: 'AWS CloudFront',
+        patterns: [
+          { type: 'header', name: 'x-amz-cf', regex: /^x-amz-cf/i },
+          { type: 'server', value: 'cloudfront', regex: /cloudfront/i },
+          { type: 'via', value: 'cloudfront', regex: /cloudfront/i },
+          { type: 'url', regex: /cloudfront/i }
+        ]
+      },
+      {
+        name: 'Fastly',
+        patterns: [
+          { type: 'header', name: 'x-fastly', regex: /^x-fastly/i },
+          { type: 'server', value: 'fastly', regex: /fastly/i },
+          { type: 'via', value: 'fastly', regex: /fastly/i },
+          { type: 'url', regex: /fastly/i }
+        ]
+      },
+      {
+        name: 'Sucuri',
+        patterns: [
+          { type: 'header', name: 'x-sucuri', regex: /^x-sucuri/i },
+          { type: 'cookie', name: 'sucuri', regex: /sucuri/i },
+          { type: 'server', value: 'sucuri', regex: /sucuri/i },
+          { type: 'url', regex: /sucuri/i }
+        ]
+      },
+      {
+        name: 'F5',
+        patterns: [
+          { type: 'header', name: 'x-f5', regex: /^x-f5/i },
+          { type: 'server', value: 'f5', regex: /f5/i },
+          { type: 'url', regex: /f5bigip/i }
+        ]
+      },
+      {
+        name: 'Barracuda',
+        patterns: [
+          { type: 'header', name: 'x-barracuda', regex: /^x-barracuda/i },
+          { type: 'server', value: 'barracuda', regex: /barracuda/i },
+          { type: 'url', regex: /barracuda/i }
+        ]
+      },
+      {
+        name: 'Shape Security',
+        patterns: [
+          { type: 'header', name: 'x-shape', regex: /^x-shape/i },
+          { type: 'cookie', name: 'shape', regex: /shape/i },
+          { type: 'url', regex: /shapesecurity|shape/i }
+        ]
+      },
+      {
+        name: 'Human Security (formerly White Ops)',
+        patterns: [
+          { type: 'header', name: 'x-human', regex: /^x-human/i },
+          { type: 'cookie', name: 'human', regex: /human/i },
+          { type: 'url', regex: /humansecurity|whiteops/i }
+        ]
+      },
+      {
+        name: 'Kasada',
+        patterns: [
+          { type: 'header', name: 'x-kpsdk', regex: /^x-kpsdk/i },
+          { type: 'cookie', name: 'kasada', regex: /kasada/i },
+          { type: 'url', regex: /kasada/i }
+        ]
+      },
+      {
+        name: 'Radware',
+        patterns: [
+          { type: 'header', name: 'x-radware', regex: /^x-radware/i },
+          { type: 'server', value: 'radware', regex: /radware/i },
+          { type: 'url', regex: /radware/i }
+        ]
+      },
+      {
+        name: 'Google reCAPTCHA',
+        patterns: [
+          { type: 'url', regex: /recaptcha|google\.com\/recaptcha/i },
+          { type: 'header', name: 'g-recaptcha', regex: /g-recaptcha/i },
+          { type: 'cookie', name: 'recaptcha', regex: /recaptcha/i }
+        ]
+      },
+      {
+        name: 'hCaptcha',
+        patterns: [
+          { type: 'url', regex: /hcaptcha/i },
+          { type: 'cookie', name: 'hcaptcha', regex: /hcaptcha/i }
+        ]
+      },
+      {
+        name: 'Cloudflare Turnstile',
+        patterns: [
+          { type: 'url', regex: /turnstile|challenges\.cloudflare\.com/i },
+          { type: 'cookie', name: 'cf_turnstile', regex: null }
+        ]
+      },
+      {
+        name: 'Vercel',
+        patterns: [
+          { type: 'header', name: 'x-vercel-id', regex: null },
+          { type: 'header', name: 'x-vercel', regex: /^x-vercel/i },
+          { type: 'server', value: 'vercel', regex: /vercel/i }
+        ]
+      },
+      {
+        name: 'AWS WAF',
+        patterns: [
+          { type: 'header', name: 'x-amzn', regex: /^x-amzn/i },
+          { type: 'server', value: 'awswaf', regex: /awswaf/i }
+        ]
+      },
+      {
+        name: 'Azure Application Gateway',
+        patterns: [
+          { type: 'header', name: 'x-azure', regex: /^x-azure/i },
+          { type: 'server', value: 'microsoft', regex: /microsoft.*gateway/i }
+        ]
+      }
+    ];
   }
 
   detect(request) {
     const indicators = [];
+    const matchedProviders = new Set();
 
-    // Check response headers for bot detection services
+    const requestHeaders = request.requestHeaders || {};
     const responseHeaders = request.responseHeaders || {};
-    const serverHeader = responseHeaders['server'] || '';
-    const viaHeader = responseHeaders['via'] || '';
-    
+    const urlLower = request.url.toLowerCase();
+    const serverHeader = (responseHeaders['server'] || '').toLowerCase();
+    const viaHeader = (responseHeaders['via'] || '').toLowerCase();
+
+    // Get all cookies from request and response
+    const requestCookies = request.cookies || [];
+    const responseCookies = request.setCookies || [];
+    const allCookieNames = [
+      ...requestCookies.map(c => c.name.toLowerCase()),
+      ...responseCookies.map(c => c.name.toLowerCase())
+    ];
+    const allCookieStrings = [
+      ...requestCookies.map(c => `${c.name}=${c.value}`.toLowerCase()),
+      ...responseCookies.map(c => `${c.name}=${c.value}`.toLowerCase())
+    ];
+
+    // Check each provider
+    for (const provider of this.botDetectionProviders) {
+      let matched = false;
+
+      for (const pattern of provider.patterns) {
+        if (pattern.type === 'header') {
+          // Check if header exists (exact match or regex)
+          if (pattern.regex) {
+            // Check all headers for regex match
+            const allHeaders = { ...requestHeaders, ...responseHeaders };
+            for (const [headerName, headerValue] of Object.entries(allHeaders)) {
+              if (pattern.regex.test(headerName)) {
+                matched = true;
+                break;
+              }
+            }
+          } else {
+            // Exact header name match (case-insensitive)
+            const headerKeys = Object.keys({ ...requestHeaders, ...responseHeaders });
+            if (headerKeys.some(key => key.toLowerCase() === pattern.name.toLowerCase())) {
+              matched = true;
+            }
+          }
+        } else if (pattern.type === 'server') {
+          if (pattern.regex) {
+            if (pattern.regex.test(serverHeader)) {
+              matched = true;
+            }
+          } else if (serverHeader.includes(pattern.value.toLowerCase())) {
+            matched = true;
+          }
+        } else if (pattern.type === 'via') {
+          if (pattern.regex) {
+            if (pattern.regex.test(viaHeader)) {
+              matched = true;
+            }
+          } else if (viaHeader.includes(pattern.value.toLowerCase())) {
+            matched = true;
+          }
+        } else if (pattern.type === 'cookie') {
+          if (pattern.regex) {
+            // Check cookie names and full cookie strings
+            if (allCookieNames.some(name => pattern.regex.test(name)) ||
+                allCookieStrings.some(cookie => pattern.regex.test(cookie))) {
+              matched = true;
+            }
+          } else {
+            // Exact cookie name match (case-insensitive)
+            if (allCookieNames.includes(pattern.name.toLowerCase())) {
+              matched = true;
+            }
+          }
+        } else if (pattern.type === 'url') {
+          if (pattern.regex && pattern.regex.test(urlLower)) {
+            matched = true;
+          }
+        }
+
+        if (matched) break;
+      }
+
+      if (matched) {
+        matchedProviders.add(provider.name);
+      }
+    }
+
+    // Legacy checks for indicators (keep existing logic)
     for (const service of this.botDetectionServices) {
-      if (serverHeader.toLowerCase().includes(service) || 
-          viaHeader.toLowerCase().includes(service)) {
+      if (serverHeader.includes(service) || viaHeader.includes(service)) {
         indicators.push(`Bot detection service: ${service}`);
       }
     }
@@ -256,19 +510,11 @@ class BotDetector {
     }
 
     // Check URL for bot detection patterns
-    const urlLower = request.url.toLowerCase();
     for (const pattern of this.botDetectionPatterns) {
       if (pattern.test(urlLower)) {
         indicators.push(`URL contains bot detection pattern`);
         break;
       }
-    }
-
-    // Check response body type (if available)
-    const contentType = responseHeaders['content-type'] || '';
-    if (contentType.includes('text/html')) {
-      // Check if response might contain challenge/captcha
-      // This would require body inspection which we can't do easily
     }
 
     // Check for specific status codes that might indicate challenges
@@ -277,7 +523,6 @@ class BotDetector {
     }
 
     // Check request headers for fingerprinting
-    const requestHeaders = request.requestHeaders || {};
     const userAgent = requestHeaders['user-agent'] || '';
     if (!userAgent || userAgent.length < 10) {
       indicators.push('Suspicious or missing User-Agent');
@@ -300,9 +545,10 @@ class BotDetector {
     }
 
     return {
-      isBotDetection: indicators.length > 0,
+      isBotDetection: indicators.length > 0 || matchedProviders.size > 0,
       indicators: indicators,
-      confidence: indicators.length > 2 ? 'high' : indicators.length > 0 ? 'medium' : 'low'
+      confidence: indicators.length > 2 ? 'high' : indicators.length > 0 ? 'medium' : 'low',
+      providers: Array.from(matchedProviders).sort()
     };
   }
 }
