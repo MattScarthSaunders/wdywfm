@@ -1,4 +1,3 @@
-// Utility functions for network analysis
 import type {
   NetworkRequest,
   Cookie,
@@ -10,7 +9,6 @@ import type {
   BotDetectionProvider,
 } from './types';
 
-// Filter parser - matches Chrome DevTools Network tab filter syntax
 export class FilterParser {
   private filters: Filter[] = [];
 
@@ -88,22 +86,18 @@ export class FilterParser {
   private matchText(request: NetworkRequest, value: string): boolean {
     const searchText = value.toLowerCase();
     
-    // Search in URL
     if (request.url.toLowerCase().includes(searchText)) {
       return true;
     }
     
-    // Search in method
     if (request.method.toLowerCase().includes(searchText)) {
       return true;
     }
     
-    // Search in status
     if (String(request.status).includes(searchText)) {
       return true;
     }
     
-    // Search in type
     if (request.type && request.type.toLowerCase().includes(searchText)) {
       return true;
     }
@@ -112,7 +106,6 @@ export class FilterParser {
   }
 }
 
-// Session detection
 export class SessionDetector {
   private sessionIndicators: string[] = [
     'session',
@@ -144,13 +137,11 @@ export class SessionDetector {
   ];
 
   isSessionRequest(request: NetworkRequest): SessionInfo {
-    // Check URL
     const urlLower = request.url.toLowerCase();
     if (this.sessionIndicators.some(indicator => urlLower.includes(indicator))) {
       return { isSession: true, reason: 'URL contains session-related keywords' };
     }
 
-    // Check request headers
     const requestHeaders = request.requestHeaders || {};
     for (const [key, value] of Object.entries(requestHeaders)) {
       const keyLower = key.toLowerCase();
@@ -162,7 +153,6 @@ export class SessionDetector {
       }
     }
 
-    // Check response headers
     const responseHeaders = request.responseHeaders || {};
     for (const [key, value] of Object.entries(responseHeaders)) {
       const keyLower = key.toLowerCase();
@@ -177,7 +167,6 @@ export class SessionDetector {
       }
     }
 
-    // Check status codes (auth-related)
     if (request.status === 401 || request.status === 403) {
       return { isSession: true, reason: 'Authentication status code' };
     }
@@ -198,9 +187,7 @@ export class SessionDetector {
   }
 }
 
-// Bot detection analyzer
 export class BotDetector {
-  // Additional headers that indicate the site has bot detection measures
   private siteBotDetectionHeaders: string[] = [
     'x-ratelimit-limit',
     'x-ratelimit-remaining',
@@ -217,17 +204,17 @@ export class BotDetector {
     'x-fraud-score',
     'x-block-reason',
     'x-challenge-reason',
-    'x-request-id', // Often used by bot detection systems for tracking
+    'x-request-id',
     'x-requested-with',
     'x-csrf-token',
     'x-csrf',
-    'cf-cache-status', // Cloudflare cache status
-    'cf-request-id', // Cloudflare request tracking
-    'x-amzn-requestid', // AWS WAF
-    'x-amzn-trace-id', // AWS X-Ray/WAF
-    'x-azure-ref', // Azure Application Gateway
+    'cf-cache-status',
+    'cf-request-id',
+    'x-amzn-requestid',
+    'x-amzn-trace-id',
+    'x-azure-ref',
     'x-azure-requestid',
-    'x-google-trace', // GCP Cloud Armor
+    'x-google-trace',
     'x-cloud-trace-context'
   ];
 
@@ -260,34 +247,32 @@ export class BotDetector {
     /browser.*id/i
   ];
 
-  // Cookie names that indicate the site has bot detection systems
   private botDetectionCookieNames: RegExp[] = [
-    /__cf_bm/i, // Cloudflare Bot Management
-    /cf_clearance/i, // Cloudflare challenge clearance
-    /cf_turnstile/i, // Cloudflare Turnstile
-    /datadome/i, // DataDome
-    /_px/i, // PerimeterX
+    /__cf_bm/i,
+    /cf_clearance/i,
+    /cf_turnstile/i,
+    /datadome/i,
+    /_px/i,
     /_px2/i,
     /_px3/i,
     /__pxvid/i,
     /px-captcha/i,
-    /incap_ses/i, // Imperva Incapsula
+    /incap_ses/i,
     /visid_incap/i,
-    /nlbi_/i, // Incapsula load balancer
-    /shape/i, // Shape Security
-    /human/i, // Human Security
-    /kasada/i, // Kasada
-    /sucuri/i, // Sucuri
-    /recaptcha/i, // Google reCAPTCHA
-    /hcaptcha/i, // hCaptcha
-    /bm_sz/i, // Bot Management
+    /nlbi_/i,
+    /shape/i,
+    /human/i,
+    /kasada/i,
+    /sucuri/i,
+    /recaptcha/i,
+    /hcaptcha/i,
+    /bm_sz/i,
     /_bot/i,
     /bot.*token/i,
     /challenge.*token/i,
     /verification.*token/i
   ];
 
-  // Known bot-detection providers with their identifying characteristics
   private botDetectionProviders: BotDetectionProvider[] = [
     {
       name: 'Cloudflare',
@@ -471,7 +456,6 @@ export class BotDetector {
     const serverHeader = ((responseHeaders['server'] as string) || '').toLowerCase();
     const viaHeader = ((responseHeaders['via'] as string) || '').toLowerCase();
 
-    // Get all cookies from request and response
     const requestCookies = request.cookies || [];
     const responseCookies = request.setCookies || [];
     const allCookieNames = [
@@ -483,15 +467,12 @@ export class BotDetector {
       ...responseCookies.map(c => `${c.name}=${c.value}`.toLowerCase())
     ];
 
-    // Check each provider
     for (const provider of this.botDetectionProviders) {
       let matched = false;
 
       for (const pattern of provider.patterns) {
         if (pattern.type === 'header') {
-          // Check if header exists (exact match or regex)
           if (pattern.regex) {
-            // Check all headers for regex match
             const allHeaders = { ...requestHeaders, ...responseHeaders };
             for (const [headerName] of Object.entries(allHeaders)) {
               if (pattern.regex.test(headerName)) {
@@ -500,7 +481,6 @@ export class BotDetector {
               }
             }
           } else {
-            // Exact header name match (case-insensitive)
             const headerKeys = Object.keys({ ...requestHeaders, ...responseHeaders });
             if (headerKeys.some(key => key.toLowerCase() === pattern.name!.toLowerCase())) {
               matched = true;
@@ -524,13 +504,11 @@ export class BotDetector {
           }
         } else if (pattern.type === 'cookie') {
           if (pattern.regex) {
-            // Check cookie names and full cookie strings
             if (allCookieNames.some(name => pattern.regex!.test(name)) ||
                 allCookieStrings.some(cookie => pattern.regex!.test(cookie))) {
               matched = true;
             }
           } else {
-            // Exact cookie name match (case-insensitive)
             if (allCookieNames.includes(pattern.name!.toLowerCase())) {
               matched = true;
             }
@@ -549,14 +527,12 @@ export class BotDetector {
       }
     }
 
-    // Legacy checks for indicators (keep existing logic)
     for (const service of this.botDetectionServices) {
       if (serverHeader.includes(service) || viaHeader.includes(service)) {
         indicators.push(`Bot detection service: ${service}`);
       }
     }
 
-    // Check URL for bot detection patterns
     for (const pattern of this.botDetectionPatterns) {
       if (pattern.test(urlLower)) {
         indicators.push(`URL contains bot detection pattern`);
@@ -564,7 +540,6 @@ export class BotDetector {
       }
     }
 
-    // Check for specific status codes that indicate bot detection systems
     if (request.status === 403) {
       indicators.push('403 Forbidden - may indicate bot detection blocking');
     }
@@ -575,7 +550,6 @@ export class BotDetector {
       indicators.push('503 Service Unavailable with Retry-After - challenge system');
     }
 
-    // Check for rate limiting headers (indicates site has rate limiting/bot detection)
     const rateLimitHeaders = ['x-ratelimit-limit', 'x-ratelimit-remaining', 'ratelimit-limit', 'ratelimit-remaining'];
     const hasRateLimit = rateLimitHeaders.some(header => 
       responseHeaders[header] || responseHeaders[header.toLowerCase()]
@@ -584,7 +558,6 @@ export class BotDetector {
       indicators.push('Rate limiting headers detected');
     }
 
-    // Check for bot detection cookies being set (indicates site has bot detection)
     for (const cookiePattern of this.botDetectionCookieNames) {
       if (allCookieNames.some(name => cookiePattern.test(name))) {
         indicators.push('Bot detection cookies present');
@@ -592,29 +565,23 @@ export class BotDetector {
       }
     }
 
-    // Check for bot detection/security headers in response
     for (const header of this.siteBotDetectionHeaders) {
       const headerLower = header.toLowerCase();
       if (responseHeaders[header] || responseHeaders[headerLower]) {
-        // Some headers are more indicative than others
         if (header.includes('bot') || header.includes('risk') || header.includes('threat') || 
             header.includes('fraud') || header.includes('challenge') || header.includes('block')) {
           indicators.push(`Bot detection header: ${header}`);
         } else if (header.includes('ratelimit') || header.includes('rate-limit')) {
-          // Already checked above, skip
         } else if (indicators.length > 0) {
-          // Only add if we already have other indicators (to reduce false positives)
           indicators.push(`Security/tracking header: ${header}`);
         }
       }
     }
 
-    // Check for Cloudflare-specific headers (indicates Cloudflare protection)
     if (responseHeaders['cf-ray'] || responseHeaders['cf-request-id'] || responseHeaders['cf-cache-status']) {
       indicators.push('Cloudflare protection headers detected');
     }
 
-    // Check for WAF headers (indicates Web Application Firewall/bot detection)
     const wafHeaders = ['x-amzn-requestid', 'x-amzn-trace-id', 'x-azure-ref', 'x-azure-requestid', 
                        'x-google-trace', 'x-cloud-trace-context'];
     const hasWaf = wafHeaders.some(header => 
@@ -624,7 +591,6 @@ export class BotDetector {
       indicators.push('WAF/Cloud provider security headers detected');
     }
 
-    // Check for security headers that often accompany bot detection
     const securityHeaders = ['x-frame-options', 'x-content-type-options', 'x-xss-protection', 
                             'strict-transport-security', 'content-security-policy'];
     const securityHeaderCount = securityHeaders.filter(header => 
@@ -634,7 +600,6 @@ export class BotDetector {
       indicators.push('Multiple security headers present (often used with bot detection)');
     }
 
-    // Calculate confidence: if any known providers are matched, it's high confidence
     let confidence: 'low' | 'medium' | 'high' = 'low';
     if (matchedProviders.size > 0) {
       confidence = 'high';
@@ -653,7 +618,6 @@ export class BotDetector {
   }
 }
 
-// Cookie parser
 export class CookieParser {
   parseSetCookie(setCookieHeader: string | string[] | undefined): ParsedCookie[] {
     if (!setCookieHeader) return [];
@@ -666,9 +630,9 @@ export class CookieParser {
       if (!nameValue || !nameValue.trim()) return null;
       
       const [name, ...valueParts] = nameValue.split('=');
-      const value = valueParts.join('='); // Handle values that contain '='
+      const value = valueParts.join('=');
       const trimmedName = name ? name.trim() : '';
-      if (!trimmedName) return null; // Skip empty names
+      if (!trimmedName) return null;
       
       const cookieObj: ParsedCookie = {
         name: trimmedName,
@@ -688,7 +652,7 @@ export class CookieParser {
       }
 
       return cookieObj;
-    }).filter((c): c is ParsedCookie => c !== null); // Remove null entries
+    }).filter((c): c is ParsedCookie => c !== null);
   }
 
   parseCookie(cookieHeader: string | undefined): Cookie[] {
@@ -698,17 +662,16 @@ export class CookieParser {
       const trimmed = c.trim();
       if (!trimmed) return null;
       const [name, ...valueParts] = trimmed.split('=');
-      const value = valueParts.join('='); // Handle values that contain '='
+      const value = valueParts.join('=');
       const trimmedName = name ? name.trim() : '';
-      if (!trimmedName) return null; // Skip empty names
+      if (!trimmedName) return null;
       return { name: trimmedName, value: value ? value.trim() : '' };
-    }).filter((c): c is Cookie => c !== null); // Remove null entries
+    }).filter((c): c is Cookie => c !== null);
     
     return cookies;
   }
 }
 
-// Format utilities
 export class Formatter {
   formatSize(bytes: number): string {
     if (bytes === undefined || bytes === null || isNaN(bytes) || bytes < 0) return '-';
@@ -757,7 +720,6 @@ export class Formatter {
   }
 }
 
-// Export singleton instances
 export const filterParser = new FilterParser();
 export const sessionDetector = new SessionDetector();
 export const botDetector = new BotDetector();

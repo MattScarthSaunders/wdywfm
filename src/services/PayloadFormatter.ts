@@ -5,17 +5,10 @@ export type PayloadSection =
   | { type: 'json'; title: string; data: string }
   | { type: 'raw'; title: string; data: string };
 
-/**
- * Service for formatting request payloads for display
- */
 export class PayloadFormatter {
-  /**
-   * Get payload data as structured sections for Vue components
-   */
   static getPayloadSections(request: NetworkRequest): PayloadSection[] {
     const sections: PayloadSection[] = [];
     
-    // Query string parameters
     try {
       const url = new URL(request.url);
       if (url.search) {
@@ -33,15 +26,12 @@ export class PayloadFormatter {
         }
       }
     } catch (e) {
-      // Invalid URL
     }
     
-    // Post data
     if (request.postData) {
       const contentType = (request.requestHeaders['content-type'] || '').toLowerCase();
       
       if (contentType.includes('application/x-www-form-urlencoded')) {
-        // Form data
         try {
           const params = new URLSearchParams(request.postData);
           const items: Array<{ key: string; value: string }> = [];
@@ -54,7 +44,6 @@ export class PayloadFormatter {
             items
           });
         } catch (e) {
-          // If parsing fails, show as raw
           sections.push({
             type: 'data',
             title: 'Form Data',
@@ -63,14 +52,12 @@ export class PayloadFormatter {
           });
         }
       } else if (contentType.includes('application/json') || contentType.includes('text/json')) {
-        // JSON payload
         sections.push({
           type: 'json',
           title: '',
           data: request.postData
         });
       } else {
-        // Raw payload
         sections.push({
           type: 'raw',
           title: '',

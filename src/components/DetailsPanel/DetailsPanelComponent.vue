@@ -220,7 +220,6 @@ onUnmounted(() => {
   padding: 12px;
 }
 
-/* Styles for dynamically generated content inside details-data */
 :deep(.details-data .header-row) {
   display: flex;
   padding: 4px 0;
@@ -239,7 +238,6 @@ onUnmounted(() => {
   word-break: break-word;
 }
 
-/* Header importance grading styles */
 :deep(.details-data .header-row.header-required .header-name),
 :deep(.details-data .header-row.header-required .header-value),
 :deep(.details-data .header-row.header-required .header-value-text),
@@ -439,7 +437,6 @@ onUnmounted(() => {
   margin-left: 4px;
 }
 
-/* Payload section styles */
 :deep(.details-data .payload-section) {
   margin-bottom: 16px;
 }

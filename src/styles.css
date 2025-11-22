@@ -1,11 +1,9 @@
 :root {
-  /* Primary/Blue colors */
   --color-primary: #1976d2;
   --color-primary-hover: #1565c0;
   --color-primary-alt: #0078d4;
   --color-primary-light: #e3f2fd;
 
-  /* Success/Green colors */
   --color-success: #4caf50;
   --color-success-dark: #2e7d32;
   --color-success-alt: #388e3c;
@@ -13,14 +11,12 @@
   --color-success-bg-light: #e8f5e9;
   --color-success-border: #2f9c19;
 
-  /* Error/Red colors */
   --color-error: #d32f2f;
   --color-error-dark: #c62828;
   --color-error-alt: #d84315;
   --color-error-bg: #ef9a9a;
   --color-error-variant: #f44336;
 
-  /* Warning/Orange colors */
   --color-warning: #ff9800;
   --color-warning-dark: #f57c00;
   --color-warning-alt: #f57f17;
@@ -29,7 +25,6 @@
   --color-warning-bg-yellow: #ffecb3;
   --color-warning-yellow: #ffc107;
 
-  /* Neutral/Gray colors */
   --color-text-primary: #333;
   --color-text-secondary: #666;
   --color-text-tertiary: #999;
@@ -44,7 +39,6 @@
   --color-border-lighter: #eee;
   --color-border-input: #ccc;
 
-  /* Other colors */
   --color-purple: #7b1fa2;
 }
 

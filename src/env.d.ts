@@ -6,7 +6,6 @@ declare module '*.vue' {
   export default component
 }
 
-// Ensure chrome.devtools is optional
 declare namespace chrome {
   namespace devtools {
     namespace network {

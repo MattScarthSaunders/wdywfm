@@ -1,13 +1,7 @@
 import type { NetworkRequest } from '../types';
 import { formatter } from '../utils';
 
-/**
- * Service for formatting session and bot detection information
- */
 export class DetailsFormatter {
-  /**
-   * Get general request information as structured data
-   */
   static getGeneralInfo(request: NetworkRequest): {
     url: string;
     method: string;

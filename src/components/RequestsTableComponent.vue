@@ -85,7 +85,6 @@ const isResizingName = ref(false);
 const startX = ref(0);
 const startWidth = ref(0);
 
-// Compute cookie source and recipient IDs based on selected request
 const cookieSourceIds = computed(() => {
   if (!props.selectedRequest) {
     return new Set<string>();
@@ -105,7 +104,6 @@ function loadNameColumnWidth() {
     if (result.nameColumnWidth !== undefined) {
       nameColumnWidth.value = Math.max(200, result.nameColumnWidth);
     } else {
-      // Calculate initial width based on 40% of viewport or table width
       const table = document.querySelector('.requests-table') as HTMLElement;
       if (table) {
         nameColumnWidth.value = Math.max(200, table.offsetWidth * 0.4);
@@ -154,7 +152,6 @@ function handleNameMouseUp() {
 
 onMounted(() => {
   loadNameColumnWidth();
-  // Use nextTick to ensure DOM is ready
   nextTick(() => {
     if (nameResizeHandleRef.value) {
       nameResizeHandleRef.value.addEventListener('mousedown', handleNameMouseDown);
@@ -261,6 +258,13 @@ onUnmounted(() => {
 .col-name span {
   display: block;
   padding-right: 8px;
+}
+
+.requests-table td.col-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 0;
 }
 
 .resize-handle {

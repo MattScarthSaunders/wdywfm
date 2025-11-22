@@ -1,5 +1,3 @@
-// Type definitions for network analysis
-
 export interface NetworkRequest {
   id: string;
   requestNumber: number;

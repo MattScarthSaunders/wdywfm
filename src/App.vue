@@ -125,8 +125,6 @@ watch([preserveLog, gradeHeaderImportance], () => {
 
 onMounted(() => {
   loadSettings();
-  // Delay monitoring start to ensure DevTools API is available
-  // Use requestAnimationFrame to ensure DOM is ready
   requestAnimationFrame(() => {
     setTimeout(() => {
       try {

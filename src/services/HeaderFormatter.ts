@@ -4,13 +4,7 @@ export interface Header {
   importance?: string;
 }
 
-/**
- * Service for formatting HTTP headers for display
- */
 export class HeaderFormatter {
-  /**
-   * Determine the importance level of a header
-   */
   static getHeaderImportance(headerName: string): string {
     if (!headerName) return 'unknown';
     const normalizedName = headerName.toLowerCase();
@@ -55,9 +49,6 @@ export class HeaderFormatter {
     }
   }
 
-  /**
-   * Get headers as structured data for Vue components
-   */
   static getHeaders(headers: Record<string, string | string[]>, gradeImportance: boolean): Header[] {
     if (!headers || Object.keys(headers).length === 0) {
       return [];

@@ -5,13 +5,11 @@ import { sessionDetector, botDetector, cookieParser, formatter } from '../utils'
 let requestCounter = 0;
 
 export function useNetworkMonitoring(options: { onRequest: (request: NetworkRequest) => void }) {
-  // Early check to ensure we're in the right context
   if (typeof window === 'undefined') {
     console.warn('useNetworkMonitoring: window is undefined');
   }
   function processRequest(request: chrome.devtools.network.Request) {
     try {
-      // Extract response headers first to get content-type
       let contentType = '';
       const responseHeadersObj: Record<string, string | string[]> = {};
       if (request.response?.headers) {
@@ -31,7 +29,6 @@ export function useNetworkMonitoring(options: { onRequest: (request: NetworkRequ
         }
       }
 
-      // Get request details
       requestCounter++;
       const requestData: NetworkRequest = {
         id: request.requestId || Date.now() + Math.random().toString(),
@@ -55,17 +52,14 @@ export function useNetworkMonitoring(options: { onRequest: (request: NetworkRequ
         postData: request.request.postData ? (typeof request.request.postData === 'string' ? request.request.postData : request.request.postData.text || null) : null
       };
 
-      // Extract request headers (normalize to lowercase for consistent access)
       if (request.request.headers) {
         for (const header of request.request.headers) {
           const headerName = header.name.toLowerCase();
-          // Store both original and normalized versions
           requestData.requestHeaders[header.name] = header.value;
           requestData.requestHeaders[headerName] = header.value;
         }
       }
 
-      // Parse cookies (try both case variations)
       const cookieHeader = requestData.requestHeaders['cookie'] || requestData.requestHeaders['Cookie'];
       if (cookieHeader) {
         requestData.cookies = cookieParser.parseCookie(cookieHeader);
@@ -79,22 +73,17 @@ export function useNetworkMonitoring(options: { onRequest: (request: NetworkRequ
         );
       }
 
-      // Detect session
       requestData.session = sessionDetector.isSessionRequest(requestData);
 
-      // Detect bot detection
       requestData.botDetection = botDetector.detect(requestData);
 
-      // Call the callback
       options.onRequest(requestData);
     } catch (error) {
-      // Error processing request
       console.error('Error processing request:', error);
     }
   }
 
   function startMonitoring() {
-    // Safely get the network API
     const getNetworkAPI = () => {
       try {
         if (typeof chrome === 'undefined') {
@@ -116,7 +105,6 @@ export function useNetworkMonitoring(options: { onRequest: (request: NetworkRequ
     
     if (!networkAPI) {
       console.warn('Chrome DevTools API not available, retrying...');
-      // Retry after a short delay in case the API loads asynchronously
       setTimeout(() => {
         const retryAPI = getNetworkAPI();
         if (retryAPI) {
@@ -129,7 +117,6 @@ export function useNetworkMonitoring(options: { onRequest: (request: NetworkRequ
     }
 
     try {
-      // Listen for network requests - check each property before accessing
       if (networkAPI.onRequestFinished && typeof networkAPI.onRequestFinished.addListener === 'function') {
         networkAPI.onRequestFinished.addListener((request) => {
           processRequest(request);
@@ -138,10 +125,8 @@ export function useNetworkMonitoring(options: { onRequest: (request: NetworkRequ
         console.error('onRequestFinished.addListener is not available');
       }
 
-      // Also listen for requests that are still loading
       if (networkAPI.onRequestWillBeSent && typeof networkAPI.onRequestWillBeSent.addListener === 'function') {
         networkAPI.onRequestWillBeSent.addListener((request) => {
-          // We'll process it when it finishes
         });
       }
     } catch (error) {
