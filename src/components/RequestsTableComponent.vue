@@ -152,22 +152,22 @@ const cookieRecipientIds = computed(() => {
 }
 
 .requests-table tbody tr.cookie-source {
-  background: #e8f5e9 !important;
-  border-left: 3px solid #4caf50 !important;
+  background: #fff8e1 !important;
+  border-left: 3px solid #ffc107 !important;
 }
 
 .requests-table tbody tr.cookie-source:hover {
-  background: #c8e6c9 !important;
+  background: #ffecb3 !important;
 }
 
 .requests-table tbody tr.cookie-recipient {
-  background: #f3e5f5 !important;
-  border-left: 4px solid #9c27b0 !important;
+  background: #e8f5e9 !important;
+  border-left: 4px solid #4caf50 !important;
 }
 
 .requests-table tbody tr.cookie-recipient:hover {
-  background: #e1bee7 !important;
-  border-left: 4px solid #7b1fa2 !important;
+  background: #c8e6c9 !important;
+  border-left: 4px solid #2e7d32 !important;
 }
 
 
