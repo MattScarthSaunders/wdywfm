@@ -837,7 +837,7 @@ function updateTableSelection() {
       row.classList.add('cookie-recipient');
       row.setAttribute('title', 'Cookie recipient: Uses cookies set by selected request');
       // Force style application with inline styles
-      row.style.cssText += 'background: #fff3e0 !important; border-left: 3px solid #ff9800 !important;';
+      row.style.cssText += 'background: #f3e5f5 !important; border-left: 3px solid #9c27b0 !important;';
     } else {
       row.removeAttribute('title');
       // Clear inline styles if not a cookie-related row
