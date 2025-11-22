@@ -1,7 +1,7 @@
 {
-  "name": "network-analysis-extension",
+  "name": "wdywfm",
   "version": "1.0.0",
-  "description": "Advanced network request analysis with session tracking and bot detection",
+  "description": "Straightforward network request analysis with session tracking and bot detection detection",
   "type": "module",
   "scripts": {
     "dev": "vite build --watch --mode development",

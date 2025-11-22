@@ -1,5 +1,5 @@
 chrome.devtools.panels.create(
-  "Network Analysis",
+  "WDYWFM",
   undefined,
   "panel.html",
   (panel) => {

@@ -1,6 +1,6 @@
 <template>
   <div class="header">
-    <h1>Network Analysis</h1>
+    <h1>WDYWFM</h1>
     <div class="filter-container">
       <input 
         type="text" 

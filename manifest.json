@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Network Analysis Extension",
+  "name": "WDYWFM",
   "version": "1.0.0",
-  "description": "Advanced network request analysis with session tracking and bot detection",
+  "description": "Straightforward network request analysis with session tracking and bot detection detection",
   "permissions": [
     "storage",
     "webRequest",
