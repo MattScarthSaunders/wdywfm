@@ -200,14 +200,35 @@ export class SessionDetector {
 
 // Bot detection analyzer
 export class BotDetector {
-  private botDetectionHeaders: string[] = [
-    'cf-ray', // Cloudflare
-    'cf-connecting-ip',
-    'x-forwarded-for',
-    'x-real-ip',
-    'x-vercel-id',
-    'server',
-    'via'
+  // Additional headers that indicate the site has bot detection measures
+  private siteBotDetectionHeaders: string[] = [
+    'x-ratelimit-limit',
+    'x-ratelimit-remaining',
+    'x-ratelimit-reset',
+    'ratelimit-limit',
+    'ratelimit-remaining',
+    'ratelimit-reset',
+    'x-rate-limit-limit',
+    'x-rate-limit-remaining',
+    'retry-after',
+    'x-bot-score',
+    'x-risk-score',
+    'x-threat-score',
+    'x-fraud-score',
+    'x-block-reason',
+    'x-challenge-reason',
+    'x-request-id', // Often used by bot detection systems for tracking
+    'x-requested-with',
+    'x-csrf-token',
+    'x-csrf',
+    'cf-cache-status', // Cloudflare cache status
+    'cf-request-id', // Cloudflare request tracking
+    'x-amzn-requestid', // AWS WAF
+    'x-amzn-trace-id', // AWS X-Ray/WAF
+    'x-azure-ref', // Azure Application Gateway
+    'x-azure-requestid',
+    'x-google-trace', // GCP Cloud Armor
+    'x-cloud-trace-context'
   ];
 
   private botDetectionServices: string[] = [
@@ -237,6 +258,33 @@ export class BotDetector {
     /fingerprint/i,
     /device.*id/i,
     /browser.*id/i
+  ];
+
+  // Cookie names that indicate the site has bot detection systems
+  private botDetectionCookieNames: RegExp[] = [
+    /__cf_bm/i, // Cloudflare Bot Management
+    /cf_clearance/i, // Cloudflare challenge clearance
+    /cf_turnstile/i, // Cloudflare Turnstile
+    /datadome/i, // DataDome
+    /_px/i, // PerimeterX
+    /_px2/i,
+    /_px3/i,
+    /__pxvid/i,
+    /px-captcha/i,
+    /incap_ses/i, // Imperva Incapsula
+    /visid_incap/i,
+    /nlbi_/i, // Incapsula load balancer
+    /shape/i, // Shape Security
+    /human/i, // Human Security
+    /kasada/i, // Kasada
+    /sucuri/i, // Sucuri
+    /recaptcha/i, // Google reCAPTCHA
+    /hcaptcha/i, // hCaptcha
+    /bm_sz/i, // Bot Management
+    /_bot/i,
+    /bot.*token/i,
+    /challenge.*token/i,
+    /verification.*token/i
   ];
 
   // Known bot-detection providers with their identifying characteristics
@@ -508,11 +556,6 @@ export class BotDetector {
       }
     }
 
-    // Check for Cloudflare-specific headers
-    if (responseHeaders['cf-ray']) {
-      indicators.push('Cloudflare protection detected');
-    }
-
     // Check URL for bot detection patterns
     for (const pattern of this.botDetectionPatterns) {
       if (pattern.test(urlLower)) {
@@ -521,37 +564,90 @@ export class BotDetector {
       }
     }
 
-    // Check for specific status codes that might indicate challenges
-    if (request.status === 403 && responseHeaders['cf-ray']) {
-      indicators.push('Cloudflare challenge (403)');
+    // Check for specific status codes that indicate bot detection systems
+    if (request.status === 403) {
+      indicators.push('403 Forbidden - may indicate bot detection blocking');
+    }
+    if (request.status === 429) {
+      indicators.push('429 Too Many Requests - rate limiting/bot detection');
+    }
+    if (request.status === 503 && responseHeaders['retry-after']) {
+      indicators.push('503 Service Unavailable with Retry-After - challenge system');
     }
 
-    // Check request headers for fingerprinting
-    const userAgent = requestHeaders['user-agent'] || '';
-    if (!userAgent || userAgent.length < 10) {
-      indicators.push('Suspicious or missing User-Agent');
+    // Check for rate limiting headers (indicates site has rate limiting/bot detection)
+    const rateLimitHeaders = ['x-ratelimit-limit', 'x-ratelimit-remaining', 'ratelimit-limit', 'ratelimit-remaining'];
+    const hasRateLimit = rateLimitHeaders.some(header => 
+      responseHeaders[header] || responseHeaders[header.toLowerCase()]
+    );
+    if (hasRateLimit) {
+      indicators.push('Rate limiting headers detected');
     }
 
-    // Check for too many headers (might indicate fingerprinting)
-    const headerCount = Object.keys(requestHeaders).length;
-    if (headerCount > 20) {
-      indicators.push('Unusually high number of request headers');
+    // Check for bot detection cookies being set (indicates site has bot detection)
+    for (const cookiePattern of this.botDetectionCookieNames) {
+      if (allCookieNames.some(name => cookiePattern.test(name))) {
+        indicators.push('Bot detection cookies present');
+        break;
+      }
     }
 
-    // Check for specific bot detection headers
-    for (const header of this.botDetectionHeaders) {
-      if (responseHeaders[header] || responseHeaders[header.toLowerCase()]) {
-        // Some headers are normal, but their presence with other indicators is notable
-        if (indicators.length > 0) {
+    // Check for bot detection/security headers in response
+    for (const header of this.siteBotDetectionHeaders) {
+      const headerLower = header.toLowerCase();
+      if (responseHeaders[header] || responseHeaders[headerLower]) {
+        // Some headers are more indicative than others
+        if (header.includes('bot') || header.includes('risk') || header.includes('threat') || 
+            header.includes('fraud') || header.includes('challenge') || header.includes('block')) {
           indicators.push(`Bot detection header: ${header}`);
+        } else if (header.includes('ratelimit') || header.includes('rate-limit')) {
+          // Already checked above, skip
+        } else if (indicators.length > 0) {
+          // Only add if we already have other indicators (to reduce false positives)
+          indicators.push(`Security/tracking header: ${header}`);
         }
       }
+    }
+
+    // Check for Cloudflare-specific headers (indicates Cloudflare protection)
+    if (responseHeaders['cf-ray'] || responseHeaders['cf-request-id'] || responseHeaders['cf-cache-status']) {
+      indicators.push('Cloudflare protection headers detected');
+    }
+
+    // Check for WAF headers (indicates Web Application Firewall/bot detection)
+    const wafHeaders = ['x-amzn-requestid', 'x-amzn-trace-id', 'x-azure-ref', 'x-azure-requestid', 
+                       'x-google-trace', 'x-cloud-trace-context'];
+    const hasWaf = wafHeaders.some(header => 
+      responseHeaders[header] || responseHeaders[header.toLowerCase()]
+    );
+    if (hasWaf) {
+      indicators.push('WAF/Cloud provider security headers detected');
+    }
+
+    // Check for security headers that often accompany bot detection
+    const securityHeaders = ['x-frame-options', 'x-content-type-options', 'x-xss-protection', 
+                            'strict-transport-security', 'content-security-policy'];
+    const securityHeaderCount = securityHeaders.filter(header => 
+      responseHeaders[header] || responseHeaders[header.toLowerCase()]
+    ).length;
+    if (securityHeaderCount >= 3) {
+      indicators.push('Multiple security headers present (often used with bot detection)');
+    }
+
+    // Calculate confidence: if any known providers are matched, it's high confidence
+    let confidence: 'low' | 'medium' | 'high' = 'low';
+    if (matchedProviders.size > 0) {
+      confidence = 'high';
+    } else if (indicators.length > 2) {
+      confidence = 'high';
+    } else if (indicators.length > 0) {
+      confidence = 'medium';
     }
 
     return {
       isBotDetection: indicators.length > 0 || matchedProviders.size > 0,
       indicators: indicators,
-      confidence: indicators.length > 2 ? 'high' : indicators.length > 0 ? 'medium' : 'low',
+      confidence: confidence,
       providers: Array.from(matchedProviders).sort()
     };
   }

@@ -64,7 +64,9 @@ const startX = ref(0);
 const startWidth = ref(0);
 
 const requestTitle = computed(() => {
-  return RequestFormatter.getRequestTitle(props.request);
+  const requestId = props.request.requestNumber || '?';
+  const requestName = RequestFormatter.getRequestName(props.request.url);
+  return `${requestId}: ${requestName}`;
 });
 
 function loadPanelWidth() {
@@ -176,11 +178,19 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+  min-width: 0; /* Allow flex items to shrink */
 }
 
 .details-header h2 {
   font-size: 14px;
   font-weight: 600;
+  margin: 0;
+  flex: 1;
+  min-width: 0; /* Allow text to truncate */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .close-btn {
@@ -192,6 +202,8 @@ onUnmounted(() => {
   padding: 0;
   width: 24px;
   height: 24px;
+  min-width: 24px; /* Prevent button from shrinking */
+  flex-shrink: 0; /* Prevent button from shrinking */
   display: flex;
   align-items: center;
   justify-content: center;
