@@ -5,12 +5,16 @@ let selectedRequest = null;
 let preserveLog = true;
 let showOnlySessions = false;
 let showOnlyBotDetection = false;
+let requestHeadersViewMode = 'json'; // 'json' or 'formatted'
+let responseHeadersViewMode = 'formatted'; // 'json' or 'formatted' (default to formatted since that's current behavior)
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   initializeEventListeners();
   startNetworkMonitoring();
   loadSettings();
+  updateRequestHeadersToggleButton(); // Initialize toggle button state
+  updateResponseHeadersToggleButton(); // Initialize toggle button state
   
   // Update panel width on window resize
   window.addEventListener('resize', () => {
@@ -62,6 +66,72 @@ function initializeEventListeners() {
   document.getElementById('showOnlyBotDetection').addEventListener('change', (e) => {
     showOnlyBotDetection = e.target.checked;
     applyFilters();
+  });
+
+  // Request headers view toggle
+  document.getElementById('requestHeadersToggle').addEventListener('click', (e) => {
+    e.stopPropagation();
+    requestHeadersViewMode = requestHeadersViewMode === 'json' ? 'formatted' : 'json';
+    updateRequestHeadersToggleButton();
+    // Re-render request headers if a request is selected
+    if (selectedRequest) {
+      renderRequestHeaders(selectedRequest);
+    }
+  });
+
+  // Response headers view toggle
+  document.getElementById('responseHeadersToggle').addEventListener('click', (e) => {
+    e.stopPropagation();
+    responseHeadersViewMode = responseHeadersViewMode === 'json' ? 'formatted' : 'json';
+    updateResponseHeadersToggleButton();
+    // Re-render response headers if a request is selected
+    if (selectedRequest) {
+      renderResponseHeaders(selectedRequest);
+    }
+  });
+
+  // Copy URL button
+  document.getElementById('copyUrlBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!selectedRequest) return;
+    
+    const url = selectedRequest.url;
+    (async () => {
+      try {
+        await navigator.clipboard.writeText(url);
+        const copyBtn = e.target;
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          const copyBtn = e.target;
+          const originalText = copyBtn.textContent;
+          copyBtn.textContent = 'Copied!';
+          copyBtn.classList.add('copied');
+          setTimeout(() => {
+            copyBtn.textContent = originalText;
+            copyBtn.classList.remove('copied');
+          }, 2000);
+        } catch (err2) {
+          console.error('Fallback copy failed:', err2);
+        }
+        document.body.removeChild(textArea);
+      }
+    })();
   });
 
   // Close details panel
@@ -145,7 +215,9 @@ function initializeEventListeners() {
       })();
     } else if ((e.target.classList.contains('section-header') || e.target.closest('.section-header')) && 
                !e.target.classList.contains('copy-json-btn-header') && 
-               !e.target.closest('.copy-json-btn-header')) {
+               !e.target.closest('.copy-json-btn-header') &&
+               !e.target.classList.contains('toggle-view-btn') &&
+               !e.target.closest('.toggle-view-btn')) {
       // Toggle section collapse (but not if clicking the copy button)
       const header = e.target.classList.contains('section-header') ? e.target : e.target.closest('.section-header');
       const section = header.closest('.details-section');
@@ -924,8 +996,7 @@ Time: ${formatter.formatTime(request.time)}
 Timestamp: ${new Date(request.timestamp).toLocaleString()}`;
 
   // Request Headers
-  const requestHeadersDiv = document.getElementById('detailsRequestHeaders');
-  requestHeadersDiv.innerHTML = formatRequestHeadersAsJSON(request.requestHeaders);
+  renderRequestHeaders(request);
   
   // Store JSON string for copy button
   const requestHeadersSection = document.querySelector('[data-section="requestHeaders"]');
@@ -933,44 +1004,43 @@ Timestamp: ${new Date(request.timestamp).toLocaleString()}`;
     const jsonStr = JSON.stringify(request.requestHeaders, null, 2);
     requestHeadersSection.dataset.json = encodeURIComponent(jsonStr);
   }
+  
+  // Update toggle button state
+  updateRequestHeadersToggleButton();
 
   // Response Headers
-  const responseHeadersDiv = document.getElementById('detailsResponseHeaders');
-  responseHeadersDiv.innerHTML = formatHeadersForDisplay(request.responseHeaders);
+  renderResponseHeaders(request);
+  
+  // Store JSON string for copy button
+  const responseHeadersSection = document.querySelector('[data-section="responseHeaders"]');
+  if (responseHeadersSection) {
+    const jsonStr = JSON.stringify(request.responseHeaders, null, 2);
+    responseHeadersSection.dataset.json = encodeURIComponent(jsonStr);
+  }
+  
+  // Update toggle button state
+  updateResponseHeadersToggleButton();
 
-  // Cookies
+  // Set-Cookies
   const cookiesDiv = document.getElementById('detailsCookies');
-  if (request.cookies.length > 0 || request.setCookies.length > 0) {
+  if (request.setCookies.length > 0) {
     let html = '';
     
-    if (request.cookies.length > 0) {
-      html += '<div style="margin-bottom: 12px;"><strong>Request Cookies:</strong></div>';
-      request.cookies.forEach(cookie => {
-        html += `<div class="cookie-item">
-          <div class="cookie-name">${escapeHtml(cookie.name)}</div>
-          <div class="cookie-value">${escapeHtml(cookie.value)}</div>
-        </div>`;
-      });
-    }
-    
-    if (request.setCookies.length > 0) {
-      html += '<div style="margin-top: 16px; margin-bottom: 12px;"><strong>Set-Cookie Headers:</strong></div>';
-      request.setCookies.forEach(cookie => {
-        html += `<div class="cookie-item">
-          <div class="cookie-name">${escapeHtml(cookie.name)}</div>
-          <div class="cookie-value">${escapeHtml(cookie.value)}</div>
-          <div style="font-size: 10px; color: #999; margin-top: 4px;">
-            ${Object.entries(cookie.attributes).map(([k, v]) => 
-              `${k}: ${v === true ? 'true' : escapeHtml(String(v))}`
-            ).join(', ')}
-          </div>
-        </div>`;
-      });
-    }
+    request.setCookies.forEach(cookie => {
+      html += `<div class="cookie-item">
+        <div class="cookie-name">${escapeHtml(cookie.name)}</div>
+        <div class="cookie-value">${escapeHtml(cookie.value)}</div>
+        <div style="font-size: 10px; color: #999; margin-top: 4px;">
+          ${Object.entries(cookie.attributes).map(([k, v]) => 
+            `${k}: ${v === true ? 'true' : escapeHtml(String(v))}`
+          ).join(', ')}
+        </div>
+      </div>`;
+    });
     
     cookiesDiv.innerHTML = html;
   } else {
-    cookiesDiv.textContent = 'No cookies';
+    cookiesDiv.textContent = 'No set-cookies';
   }
 
   // Session Analysis
@@ -1056,6 +1126,82 @@ function formatRequestHeadersAsJSON(headers) {
   let html = `<pre class="json-display">${escapeHtml(jsonStr)}</pre>`;
   
   return html;
+}
+
+function renderRequestHeaders(request) {
+  const requestHeadersDiv = document.getElementById('detailsRequestHeaders');
+  const sectionContent = requestHeadersDiv.closest('.section-content');
+  const isCollapsed = sectionContent && sectionContent.classList.contains('collapsed');
+  
+  if (requestHeadersViewMode === 'formatted') {
+    // Filter out lowercase duplicates to avoid showing the same header twice
+    const cleanedHeaders = {};
+    const seenLowercase = new Set();
+    for (const [key, value] of Object.entries(request.requestHeaders)) {
+      const lowerKey = key.toLowerCase();
+      // Only include if it's the original case version (not a lowercase duplicate)
+      // or if we haven't seen this lowercase key before
+      if (key === lowerKey || !seenLowercase.has(lowerKey)) {
+        cleanedHeaders[key] = value;
+        seenLowercase.add(lowerKey);
+      }
+    }
+    requestHeadersDiv.innerHTML = formatHeadersForDisplay(cleanedHeaders);
+  } else {
+    requestHeadersDiv.innerHTML = formatRequestHeadersAsJSON(request.requestHeaders);
+  }
+  
+  // Recalculate maxHeight if section is expanded to ensure all content is visible
+  if (sectionContent && !isCollapsed) {
+    // Use setTimeout to ensure DOM has updated, then set a very large max-height
+    // to allow all content to be visible (we use a large value instead of exact
+    // calculation to handle dynamic content changes)
+    setTimeout(() => {
+      sectionContent.style.maxHeight = '9999px';
+    }, 0);
+  }
+}
+
+function renderResponseHeaders(request) {
+  const responseHeadersDiv = document.getElementById('detailsResponseHeaders');
+  const sectionContent = responseHeadersDiv.closest('.section-content');
+  const isCollapsed = sectionContent && sectionContent.classList.contains('collapsed');
+  
+  if (responseHeadersViewMode === 'formatted') {
+    responseHeadersDiv.innerHTML = formatHeadersForDisplay(request.responseHeaders);
+  } else {
+    responseHeadersDiv.innerHTML = formatRequestHeadersAsJSON(request.responseHeaders);
+  }
+  
+  // Recalculate maxHeight if section is expanded to ensure all content is visible
+  if (sectionContent && !isCollapsed) {
+    // Use setTimeout to ensure DOM has updated, then set a very large max-height
+    // to allow all content to be visible (we use a large value instead of exact
+    // calculation to handle dynamic content changes)
+    setTimeout(() => {
+      sectionContent.style.maxHeight = '9999px';
+    }, 0);
+  }
+}
+
+function updateRequestHeadersToggleButton() {
+  const toggleBtn = document.getElementById('requestHeadersToggle');
+  if (toggleBtn) {
+    toggleBtn.textContent = requestHeadersViewMode === 'json' ? 'Formatted' : 'JSON';
+    toggleBtn.title = requestHeadersViewMode === 'json' 
+      ? 'Switch to formatted view' 
+      : 'Switch to JSON view';
+  }
+}
+
+function updateResponseHeadersToggleButton() {
+  const toggleBtn = document.getElementById('responseHeadersToggle');
+  if (toggleBtn) {
+    toggleBtn.textContent = responseHeadersViewMode === 'json' ? 'Formatted' : 'JSON';
+    toggleBtn.title = responseHeadersViewMode === 'json' 
+      ? 'Switch to formatted view' 
+      : 'Switch to JSON view';
+  }
 }
 
 function escapeHtml(text) {

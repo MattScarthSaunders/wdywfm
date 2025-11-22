@@ -75,6 +75,7 @@
           <h3 class="section-header" data-section="general">
             <span class="section-toggle">▼</span>
             General
+            <button id="copyUrlBtn" class="copy-json-btn-header" title="Copy URL to clipboard">Copy URL</button>
           </h3>
           <div id="detailsGeneral" class="details-data section-content"></div>
         </div>
@@ -82,6 +83,7 @@
           <h3 class="section-header" data-section="requestHeaders">
             <span class="section-toggle">▼</span>
             Request Headers
+            <button id="requestHeadersToggle" class="toggle-view-btn" title="Toggle between JSON and formatted view">Formatted</button>
             <button class="copy-json-btn-header" title="Copy JSON to clipboard">Copy JSON</button>
           </h3>
           <div id="detailsRequestHeaders" class="details-data section-content"></div>
@@ -90,13 +92,15 @@
           <h3 class="section-header" data-section="responseHeaders">
             <span class="section-toggle">▼</span>
             Response Headers
+            <button id="responseHeadersToggle" class="toggle-view-btn" title="Toggle between JSON and formatted view">JSON</button>
+            <button class="copy-json-btn-header" title="Copy JSON to clipboard">Copy JSON</button>
           </h3>
           <div id="detailsResponseHeaders" class="details-data section-content"></div>
         </div>
         <div class="details-section">
           <h3 class="section-header" data-section="cookies">
             <span class="section-toggle">▼</span>
-            Cookies
+            Set-Cookies
           </h3>
           <div id="detailsCookies" class="details-data section-content"></div>
         </div>
