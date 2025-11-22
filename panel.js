@@ -8,6 +8,7 @@ let showOnlyBotDetection = false;
 let gradeHeaderImportance = false;
 let requestHeadersViewMode = 'json'; // 'json' or 'formatted'
 let responseHeadersViewMode = 'formatted'; // 'json' or 'formatted' (default to formatted since that's current behavior)
+let requestCounter = 0; // Counter for assigning numeric request IDs
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -531,8 +532,10 @@ async function processRequest(request) {
     }
 
     // Get request details
+    requestCounter++;
     const requestData = {
       id: request.requestId || Date.now() + Math.random(),
+      requestNumber: requestCounter, // Simple numeric ID
       url: request.request.url,
       method: request.request.method,
       status: request.response?.status || 0,
@@ -664,6 +667,12 @@ function createTableRow(request, index) {
     setTimeout(updateTableSelection, 0);
   });
 
+  // ID column
+  const idCell = document.createElement('td');
+  idCell.textContent = request.requestNumber || '-';
+  idCell.className = 'col-id';
+  row.appendChild(idCell);
+
   // Name column
   const nameCell = document.createElement('td');
   const url = new URL(request.url);
@@ -743,11 +752,12 @@ function createTableRow(request, index) {
 
 function findCookieSourceRequests(request) {
   // Find requests that set cookies used by this request
-  const sourceRequestIds = new Set();
+  // Only track the closest (most recent) source for each cookie
+  const cookieToClosestSource = new Map(); // Map<cookieName, requestId>
   
   // Check what cookies the request has
   if (!request.cookies || !Array.isArray(request.cookies) || request.cookies.length === 0) {
-    return sourceRequestIds;
+    return new Set();
   }
   
   // Extract cookie names from request cookies (normalized)
@@ -762,15 +772,16 @@ function findCookieSourceRequests(request) {
   });
   
   if (cookieNames.size === 0) {
-    return sourceRequestIds;
+    return new Set();
   }
   
   // Check all requests (use index as fallback if timestamps are the same)
   const requestIndex = requests.findIndex(r => String(r.id) === String(request.id));
-  if (requestIndex === -1) return sourceRequestIds;
+  if (requestIndex === -1) return new Set();
   
-  // Check all earlier requests
-  for (let i = 0; i < requestIndex; i++) {
+  // Iterate backwards from the closest request to find the most recent source for each cookie
+  // This ensures we only keep the closest source for each cookie
+  for (let i = requestIndex - 1; i >= 0; i--) {
     const req = requests[i];
     if (!req) continue;
     if (String(req.id) === String(request.id)) continue;
@@ -781,17 +792,27 @@ function findCookieSourceRequests(request) {
       if (setCookie && setCookie.name && typeof setCookie.name === 'string' && setCookie.name.trim()) {
         const setName = setCookie.name.trim().toLowerCase();
         if (setName.length > 0 && cookieNames.has(setName)) {
-          sourceRequestIds.add(String(req.id));
+          // Only add if we haven't found a closer source for this cookie yet
+          if (!cookieToClosestSource.has(setName)) {
+            cookieToClosestSource.set(setName, String(req.id));
+          }
         }
       }
     });
+    
+    // Early exit if we've found sources for all cookies
+    if (cookieToClosestSource.size === cookieNames.size) {
+      break;
+    }
   }
   
-  return sourceRequestIds;
+  // Return a Set of unique source request IDs
+  return new Set(cookieToClosestSource.values());
 }
 
 function findCookieRecipientRequests(request) {
   // Find requests that use cookies set by this request
+  // Only include recipients if the selected request is the closest source for at least one cookie
   const recipientRequestIds = new Set();
   
   // Check what cookies this request sets
@@ -826,18 +847,151 @@ function findCookieRecipientRequests(request) {
     
     if (!req.cookies || !Array.isArray(req.cookies) || req.cookies.length === 0) continue;
     
-    // Check if this request uses any cookies that the selected request sets
+    // Extract cookies used by this recipient request
+    const recipientCookieNames = new Set();
     req.cookies.forEach(cookie => {
       if (cookie && cookie.name && typeof cookie.name === 'string' && cookie.name.trim()) {
         const cookieName = cookie.name.trim().toLowerCase();
-        if (cookieName.length > 0 && cookieNames.has(cookieName)) {
-          recipientRequestIds.add(String(req.id));
+        if (cookieName.length > 0) {
+          recipientCookieNames.add(cookieName);
         }
       }
     });
+    
+    // Find cookies that both the selected request sets and the recipient uses
+    const matchingCookies = new Set();
+    cookieNames.forEach(cookieName => {
+      if (recipientCookieNames.has(cookieName)) {
+        matchingCookies.add(cookieName);
+      }
+    });
+    
+    if (matchingCookies.size === 0) continue;
+    
+    // For each matching cookie, check if the selected request is the closest source
+    // Only add recipient if selected request is closest source for at least one cookie
+    let isClosestSourceForAnyCookie = false;
+    
+    for (const cookieName of matchingCookies) {
+      // Find the closest source for this cookie for the recipient request
+      const recipientIndex = i;
+      let closestSourceId = null;
+      
+      // Iterate backwards from the recipient to find the closest source
+      for (let j = recipientIndex - 1; j >= 0; j--) {
+        const potentialSource = requests[j];
+        if (!potentialSource) continue;
+        if (!potentialSource.setCookies || !Array.isArray(potentialSource.setCookies) || potentialSource.setCookies.length === 0) continue;
+        
+        // Check if this request sets the cookie
+        const setsCookie = potentialSource.setCookies.some(setCookie => {
+          if (setCookie && setCookie.name && typeof setCookie.name === 'string' && setCookie.name.trim()) {
+            return setCookie.name.trim().toLowerCase() === cookieName;
+          }
+          return false;
+        });
+        
+        if (setsCookie) {
+          closestSourceId = String(potentialSource.id);
+          break; // Found the closest source
+        }
+      }
+      
+      // If the closest source is the selected request, mark this recipient
+      if (closestSourceId === String(request.id)) {
+        isClosestSourceForAnyCookie = true;
+        break; // No need to check other cookies if we found one
+      }
+    }
+    
+    // Only add if selected request is closest source for at least one cookie
+    if (isClosestSourceForAnyCookie) {
+      recipientRequestIds.add(String(req.id));
+    }
   }
   
   return recipientRequestIds;
+}
+
+function findFirstUsageOfCookie(cookieName, sourceRequestIndex) {
+  // Find the first request after the source that uses this cookie
+  // Returns the request number (ID) or null if unused
+  const normalizedCookieName = cookieName.trim().toLowerCase();
+  
+  if (normalizedCookieName.length === 0) {
+    return null;
+  }
+  
+  // Check all requests after the source
+  for (let i = sourceRequestIndex + 1; i < requests.length; i++) {
+    const req = requests[i];
+    if (!req) continue;
+    if (!req.cookies || !Array.isArray(req.cookies) || req.cookies.length === 0) continue;
+    
+    // Check if this request uses the cookie
+    const usesCookie = req.cookies.some(cookie => {
+      if (cookie && cookie.name && typeof cookie.name === 'string' && cookie.name.trim()) {
+        return cookie.name.trim().toLowerCase() === normalizedCookieName;
+      }
+      return false;
+    });
+    
+    if (usesCookie) {
+      return req.requestNumber;
+    }
+  }
+  
+  return null; // Cookie is unused
+}
+
+function findAllUsagesOfCookie(cookieName, sourceRequestIndex, sourceRequestNumber) {
+  // Find all requests after the source that use this cookie
+  // Returns an object with source info and array of usage request numbers
+  const normalizedCookieName = cookieName.trim().toLowerCase();
+  const usageRequestNumbers = [];
+  
+  if (normalizedCookieName.length === 0) {
+    return {
+      source: { id: sourceRequestNumber, name: null },
+      usages: []
+    };
+  }
+  
+  // Check all requests after the source
+  for (let i = sourceRequestIndex + 1; i < requests.length; i++) {
+    const req = requests[i];
+    if (!req) continue;
+    if (!req.cookies || !Array.isArray(req.cookies) || req.cookies.length === 0) continue;
+    
+    // Check if this request uses the cookie
+    const usesCookie = req.cookies.some(cookie => {
+      if (cookie && cookie.name && typeof cookie.name === 'string' && cookie.name.trim()) {
+        return cookie.name.trim().toLowerCase() === normalizedCookieName;
+      }
+      return false;
+    });
+    
+    if (usesCookie && req.requestNumber) {
+      usageRequestNumbers.push(req.requestNumber);
+    }
+  }
+  
+  // Get the source request name
+  const sourceRequest = requests[sourceRequestIndex];
+  let sourceName = null;
+  if (sourceRequest) {
+    try {
+      const url = new URL(sourceRequest.url);
+      sourceName = url.pathname.split('/').pop() || url.pathname || url.hostname;
+    } catch (e) {
+      sourceName = sourceRequest.url;
+    }
+  }
+  
+  return {
+    source: { id: sourceRequestNumber, name: sourceName },
+    usages: usageRequestNumbers
+  };
 }
 
 function updateTableSelection() {
@@ -979,6 +1133,9 @@ Timestamp: ${new Date(request.timestamp).toLocaleString()}`;
   if (request.setCookies.length > 0) {
     let html = '';
     
+    // Find the index of the current request
+    const requestIndex = requests.findIndex(r => String(r.id) === String(request.id));
+    
     request.setCookies.forEach(cookie => {
       const cookieName = escapeHtml(cookie.name);
       const cookieValueRaw = cookie.value;
@@ -986,6 +1143,20 @@ Timestamp: ${new Date(request.timestamp).toLocaleString()}`;
       const isLongValue = cookieValueRaw.length > 100;
       const truncatedValue = isLongValue ? cookieValueEscaped.substring(0, 100) : cookieValueEscaped;
       const cookieId = `cookie-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Find all usages of this cookie
+      const usageInfo = requestIndex !== -1 && request.requestNumber
+        ? findAllUsagesOfCookie(cookie.name, requestIndex, request.requestNumber)
+        : { source: { id: request.requestNumber || '?', name: null }, usages: [] };
+      
+      // Format usage information
+      const sourceName = usageInfo.source.name ? escapeHtml(usageInfo.source.name) : 'unknown';
+      const sourceText = `source: ${usageInfo.source.id}:${sourceName}`;
+      const usagesText = usageInfo.usages.length > 0 
+        ? `used in [${usageInfo.usages.join(',')}]`
+        : 'unused';
+      const usageDisplay = `${sourceText}, ${usagesText}`;
+      const usageClass = usageInfo.usages.length > 0 ? 'cookie-used' : 'cookie-unused';
       
       html += `<div class="cookie-item">
         <div class="cookie-header">
@@ -999,6 +1170,9 @@ Timestamp: ${new Date(request.timestamp).toLocaleString()}`;
           ${Object.entries(cookie.attributes).map(([k, v]) => 
             `${k}: ${v === true ? 'true' : escapeHtml(String(v))}`
           ).join(', ')}
+        </div>
+        <div class="cookie-usage ${usageClass}">
+          ${usageDisplay}
         </div>
       </div>`;
     });
@@ -1413,6 +1587,7 @@ function clearRequests() {
   requests = [];
   filteredRequests = [];
   selectedRequest = null;
+  requestCounter = 0; // Reset request counter
   renderTable();
   updateStats();
   document.getElementById('detailsPanel').classList.add('hidden');
