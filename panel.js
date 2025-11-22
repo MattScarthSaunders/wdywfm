@@ -1235,6 +1235,19 @@ function getHeaderImportance(headerName) {
   
   const normalizedName = headerName.toLowerCase();
   
+  // Check for headers starting with "sec-ch" (all sec-ch headers are essential)
+  if (normalizedName.startsWith('sec-ch')) {
+    return 'required';
+  }
+  
+  // Check for SSO/SSG token headers (ssgtoken, ssotoken, or similar patterns)
+  if (normalizedName.includes('ssgtoken') || 
+      normalizedName.includes('ssotoken') ||
+      normalizedName.includes('sso-token') ||
+      normalizedName.includes('ssg-token')) {
+    return 'required';
+  }
+  
   // Required headers (must appear or indicate bot detection/essential functionality)
   const requiredHeaders = [
     'host', // Required for HTTP/1.1
