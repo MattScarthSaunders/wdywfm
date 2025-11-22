@@ -162,6 +162,24 @@ function initializeEventListeners() {
         expandBtn.textContent = '[collapse]';
         expandBtn.classList.add('expanded');
       }
+    } else if (e.target.classList.contains('cookie-expand')) {
+      e.stopPropagation();
+      const expandBtn = e.target;
+      const cookieId = expandBtn.dataset.id;
+      const fullValue = expandBtn.dataset.full;
+      const textSpan = document.getElementById(`${cookieId}-text`);
+      
+      if (expandBtn.classList.contains('expanded')) {
+        // Collapse
+        textSpan.innerHTML = fullValue.substring(0, 100);
+        expandBtn.textContent = '[...]';
+        expandBtn.classList.remove('expanded');
+      } else {
+        // Expand
+        textSpan.innerHTML = fullValue;
+        expandBtn.textContent = '[collapse]';
+        expandBtn.classList.add('expanded');
+      }
     } else if (e.target.classList.contains('copy-json-btn') || e.target.classList.contains('copy-json-btn-header')) {
       e.stopPropagation();
       const copyBtn = e.target;
@@ -1027,10 +1045,22 @@ Timestamp: ${new Date(request.timestamp).toLocaleString()}`;
     let html = '';
     
     request.setCookies.forEach(cookie => {
+      const cookieName = escapeHtml(cookie.name);
+      const cookieValueRaw = cookie.value;
+      const cookieValueEscaped = escapeHtml(cookieValueRaw);
+      const isLongValue = cookieValueRaw.length > 100;
+      const truncatedValue = isLongValue ? cookieValueEscaped.substring(0, 100) : cookieValueEscaped;
+      const cookieId = `cookie-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
       html += `<div class="cookie-item">
-        <div class="cookie-name">${escapeHtml(cookie.name)}</div>
-        <div class="cookie-value">${escapeHtml(cookie.value)}</div>
-        <div style="font-size: 10px; color: #999; margin-top: 4px;">
+        <div class="cookie-header">
+          <div class="cookie-name" title="${cookieName}">${cookieName}</div>
+          <div class="cookie-value">
+            <span class="cookie-value-text" id="${cookieId}-text">${truncatedValue}</span>
+            ${isLongValue ? `<span class="cookie-expand" id="${cookieId}-expand" data-full="${escapeHtml(cookieValueRaw)}" data-id="${cookieId}">[...]</span>` : ''}
+          </div>
+        </div>
+        <div class="cookie-attributes">
           ${Object.entries(cookie.attributes).map(([k, v]) => 
             `${k}: ${v === true ? 'true' : escapeHtml(String(v))}`
           ).join(', ')}

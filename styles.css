@@ -593,23 +593,73 @@ body {
   overflow-y: auto;
 }
 
+#detailsCookies {
+  white-space: normal;
+}
+
 .cookie-item {
-  padding: 6px;
-  margin-bottom: 4px;
+  padding: 4px 6px;
+  margin-bottom: 2px;
   background: #fff;
   border-left: 3px solid #4caf50;
-  padding-left: 10px;
+  padding-left: 8px;
+  line-height: 1.3;
+  display: block;
+  height: auto;
+  min-height: 0;
+  white-space: normal;
+}
+
+.cookie-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.3;
+  min-height: 0;
 }
 
 .cookie-name {
   font-weight: 600;
   color: #2e7d32;
+  min-width: 150px;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .cookie-value {
   color: #666;
+  font-size: 11px;
+  flex: 1;
+  word-break: break-word;
+  min-height: 0;
+  line-height: 1.3;
+}
+
+.cookie-expand {
+  color: #1976d2;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-left: 4px;
   font-size: 10px;
+  user-select: none;
+}
+
+.cookie-expand:hover {
+  color: #1565c0;
+}
+
+.cookie-expand.expanded {
+  color: #d32f2f;
+}
+
+.cookie-attributes {
+  font-size: 10px;
+  color: #999;
   margin-top: 2px;
+  line-height: 1.2;
 }
 
 .session-indicator {
