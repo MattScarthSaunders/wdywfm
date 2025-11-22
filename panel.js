@@ -5,6 +5,7 @@ let selectedRequest = null;
 let preserveLog = true;
 let showOnlySessions = false;
 let showOnlyBotDetection = false;
+let gradeHeaderImportance = false;
 let requestHeadersViewMode = 'json'; // 'json' or 'formatted'
 let responseHeadersViewMode = 'formatted'; // 'json' or 'formatted' (default to formatted since that's current behavior)
 
@@ -66,6 +67,15 @@ function initializeEventListeners() {
   document.getElementById('showOnlyBotDetection').addEventListener('change', (e) => {
     showOnlyBotDetection = e.target.checked;
     applyFilters();
+  });
+  
+  document.getElementById('gradeHeaderImportance').addEventListener('change', (e) => {
+    gradeHeaderImportance = e.target.checked;
+    saveSettings();
+    // Re-render request headers if a request is selected
+    if (selectedRequest) {
+      renderRequestHeaders(selectedRequest);
+    }
   });
 
   // Request headers view toggle
@@ -233,7 +243,10 @@ function initializeEventListeners() {
                !e.target.classList.contains('copy-json-btn-header') && 
                !e.target.closest('.copy-json-btn-header') &&
                !e.target.classList.contains('toggle-view-btn') &&
-               !e.target.closest('.toggle-view-btn')) {
+               !e.target.closest('.toggle-view-btn') &&
+               !e.target.classList.contains('checkbox-label-inline') &&
+               !e.target.closest('.checkbox-label-inline') &&
+               e.target.type !== 'checkbox') {
       // Toggle section collapse (but not if clicking the copy button)
       const header = e.target.classList.contains('section-header') ? e.target : e.target.closest('.section-header');
       const section = header.closest('.details-section');
@@ -1043,6 +1056,96 @@ Timestamp: ${new Date(request.timestamp).toLocaleString()}`;
   }
 }
 
+function getHeaderImportance(headerName) {
+  if (!headerName) return 'unknown';
+  
+  const normalizedName = headerName.toLowerCase();
+  
+  // Required headers (must appear or indicate bot detection/essential functionality)
+  const requiredHeaders = [
+    'host', // Required for HTTP/1.1
+    // Bot detection headers (if present, indicate bot detection is in use)
+    'cf-ray',
+    'cf-connecting-ip',
+    'cf-visitor',
+    'cf-ipcountry',
+    'x-datadome',
+    'x-px',
+    'x-iinfo',
+    'x-cdn',
+    'x-akamai',
+    'x-amz-cf',
+    'x-fastly',
+    'x-sucuri',
+    'x-f5',
+    'x-barracuda',
+    'x-shape',
+    'x-human',
+    'x-kpsdk',
+    'x-radware',
+    'g-recaptcha',
+    'x-vercel-id',
+    'x-vercel',
+    'x-amzn',
+    'x-azure',
+    // Browser fingerprinting headers (used for bot detection)
+    'sec-ch-ua',
+    'sec-ch-ua-mobile',
+    'sec-ch-ua-platform',
+    'sec-fetch-site',
+    'sec-fetch-mode',
+    'sec-fetch-user',
+    'sec-fetch-dest',
+    // Essential headers for bot detection
+    'user-agent',
+    'x-forwarded-for',
+    'x-real-ip',
+    'via',
+    'server'
+  ];
+  
+  // Optional headers (can optionally appear)
+  const optionalHeaders = [
+    'accept',
+    'accept-language',
+    'accept-encoding',
+    'accept-charset',
+    'referer',
+    'referrer-policy',
+    'cookie',
+    'authorization',
+    'content-type',
+    'content-length',
+    'content-encoding',
+    'connection',
+    'cache-control',
+    'if-modified-since',
+    'if-none-match',
+    'if-match',
+    'if-range',
+    'range',
+    'origin',
+    'dnt',
+    'upgrade-insecure-requests',
+    'expect',
+    'te',
+    'trailer',
+    'transfer-encoding',
+    'warning',
+    'x-requested-with',
+    'x-forwarded-proto',
+    'x-forwarded-host'
+  ];
+  
+  if (requiredHeaders.includes(normalizedName)) {
+    return 'required';
+  } else if (optionalHeaders.includes(normalizedName)) {
+    return 'optional';
+  } else {
+    return 'unknown';
+  }
+}
+
 function formatHeadersForDisplay(headers) {
   if (!headers || Object.keys(headers).length === 0) {
     return '<div style="color: #999;">No headers</div>';
@@ -1056,9 +1159,12 @@ function formatHeadersForDisplay(headers) {
     const truncatedVal = isLong ? valStr.substring(0, 100) : valStr;
     const headerId = `header-${key.replace(/[^a-zA-Z0-9]/g, '-')}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
-    html += `<div class="header-row">
-      <div class="header-name">${escapeHtml(key)}</div>
-      <div class="header-value">
+    // Get importance class if grading is enabled
+    const importanceClass = gradeHeaderImportance ? `header-${getHeaderImportance(key)}` : '';
+    
+    html += `<div class="header-row ${importanceClass}">
+      <div class="header-name ${importanceClass}">${escapeHtml(key)}</div>
+      <div class="header-value ${importanceClass}">
         <span class="header-value-text" id="${headerId}-text">${escapeHtml(truncatedVal)}</span>
         ${isLong ? `<span class="header-expand" id="${headerId}-expand" data-full="${escapeHtml(valStr)}" data-id="${headerId}">[...]</span>` : ''}
       </div>
@@ -1344,7 +1450,7 @@ function exportData() {
 }
 
 function loadSettings() {
-  chrome.storage.local.get(['preserveLog', 'showOnlySessions', 'showOnlyBotDetection'], (result) => {
+  chrome.storage.local.get(['preserveLog', 'showOnlySessions', 'showOnlyBotDetection', 'gradeHeaderImportance'], (result) => {
     if (result.preserveLog !== undefined) {
       preserveLog = result.preserveLog;
       document.getElementById('preserveLog').checked = preserveLog;
@@ -1357,6 +1463,10 @@ function loadSettings() {
       showOnlyBotDetection = result.showOnlyBotDetection;
       document.getElementById('showOnlyBotDetection').checked = showOnlyBotDetection;
     }
+    if (result.gradeHeaderImportance !== undefined) {
+      gradeHeaderImportance = result.gradeHeaderImportance;
+      document.getElementById('gradeHeaderImportance').checked = gradeHeaderImportance;
+    }
   });
 }
 
@@ -1364,6 +1474,7 @@ function saveSettings() {
   chrome.storage.local.set({
     preserveLog,
     showOnlySessions,
-    showOnlyBotDetection
+    showOnlyBotDetection,
+    gradeHeaderImportance
   });
 }

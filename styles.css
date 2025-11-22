@@ -108,6 +108,17 @@ body {
   cursor: pointer;
 }
 
+.checkbox-label-inline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  cursor: pointer;
+  margin-left: auto;
+  margin-right: 6px;
+  white-space: nowrap;
+}
+
 .table-container {
   flex: 1;
   overflow: auto;
@@ -539,6 +550,28 @@ body {
   color: #333;
   flex: 1;
   word-break: break-word;
+}
+
+/* Header importance grading styles */
+.header-row.header-required .header-name,
+.header-row.header-required .header-value,
+.header-row.header-required .header-value-text,
+.header-row.header-required .header-expand {
+  color: #d32f2f; /* Red for required */
+}
+
+.header-row.header-optional .header-name,
+.header-row.header-optional .header-value,
+.header-row.header-optional .header-value-text,
+.header-row.header-optional .header-expand {
+  color: #f57c00; /* Amber for optional */
+}
+
+.header-row.header-unknown .header-name,
+.header-row.header-unknown .header-value,
+.header-row.header-unknown .header-value-text,
+.header-row.header-unknown .header-expand {
+  color: #333; /* Black/default for unknown */
 }
 
 .header-expand {
