@@ -10,7 +10,11 @@
     
     <ToolbarComponent
       :preserve-log="preserveLog"
+      :hide-java-script="hideJavaScript"
+      :hide-assets="hideAssets"
       @update:preserve-log="preserveLog = $event"
+      @update:hideJavaScript="hideJavaScript = $event"
+      @update:hideAssets="hideAssets = $event"
       @clear="clearRequests"
       @export="exportData"
     />
@@ -49,7 +53,7 @@ const filteredRequests = ref<NetworkRequest[]>([]);
 const selectedRequest = ref<NetworkRequest | null>(null);
 const filterText = ref('');
 
-const { preserveLog, gradeHeaderImportance, loadSettings, saveSettings } = useSettings();
+const { preserveLog, gradeHeaderImportance, hideJavaScript, hideAssets, loadSettings, saveSettings } = useSettings();
 
 const { startMonitoring } = useNetworkMonitoring({
   onRequest: (requestData: NetworkRequest) => {
@@ -67,9 +71,21 @@ function applyFilters() {
   const parser = filterParser.parse(filterText.value);
   
   filteredRequests.value = requests.value.filter(request => {
+    // Apply text filter
     if (parser && !parser.matches(request)) {
       return false;
     }
+    
+    // Filter out JavaScript responses
+    if (hideJavaScript.value && request.type === 'script') {
+      return false;
+    }
+    
+    // Filter out asset requests (stylesheet, image, font, media)
+    if (hideAssets.value && ['stylesheet', 'image', 'font', 'media'].includes(request.type)) {
+      return false;
+    }
+    
     return true;
   });
 }
@@ -119,7 +135,8 @@ watch([filterText], () => {
   applyFilters();
 });
 
-watch([preserveLog, gradeHeaderImportance], () => {
+watch([preserveLog, gradeHeaderImportance, hideJavaScript, hideAssets], () => {
+  applyFilters();
   saveSettings();
 });
 

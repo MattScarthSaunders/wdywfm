@@ -10,16 +10,36 @@
       /> 
       Preserve log
     </label>
+    <label class="checkbox-label">
+      <input 
+        type="checkbox" 
+        :checked="hideJavaScript"
+        @change="$emit('update:hideJavaScript', ($event.target as HTMLInputElement).checked)"
+      /> 
+      Hide JavaScript
+    </label>
+    <label class="checkbox-label">
+      <input 
+        type="checkbox" 
+        :checked="hideAssets"
+        @change="$emit('update:hideAssets', ($event.target as HTMLInputElement).checked)"
+      /> 
+      Hide Assets
+    </label>
   </div>
 </template>
 
 <script setup lang="ts">
 defineProps<{
   preserveLog: boolean;
+  hideJavaScript: boolean;
+  hideAssets: boolean;
 }>();
 
 defineEmits<{
   'update:preserveLog': [value: boolean];
+  'update:hideJavaScript': [value: boolean];
+  'update:hideAssets': [value: boolean];
   'clear': [];
   'export': [];
 }>();
