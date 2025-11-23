@@ -80,7 +80,7 @@ const usageDisplay = computed(() => {
   padding: 4px 6px;
   margin-bottom: 2px;
   background: var(--color-bg-white);
-  border-left: 3px solid var(--color-success);
+  border-left: 3px solid var(--color-primary-divider);
   padding-left: 8px;
   line-height: 1.3;
   display: block;
@@ -99,7 +99,7 @@ const usageDisplay = computed(() => {
 
 .cookie-name {
   font-weight: 600;
-  color: var(--color-success-dark);
+  color: var(--color-primary);
   min-width: 150px;
   max-width: 150px;
   overflow: hidden;

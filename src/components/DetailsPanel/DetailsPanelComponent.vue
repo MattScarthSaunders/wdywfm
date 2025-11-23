@@ -8,29 +8,36 @@
     <div class="details-content">
       <GeneralSection :request="request" />
       
+      <div class="divider"></div>
+      
+      <RequestHeadersSection 
+      :request="request"
+      :grade-header-importance="gradeHeaderImportance"
+      @update:grade-header-importance="$emit('update:gradeHeaderImportance', $event)"
+      />
+
       <PayloadSection :request="request" />
 
-      <RequestHeadersSection 
-        :request="request"
-        :grade-header-importance="gradeHeaderImportance"
-        @update:grade-header-importance="$emit('update:gradeHeaderImportance', $event)"
-      />
+      <div class="divider"></div>
       
       <ResponseHeadersSection 
         :request="request"
         :grade-header-importance="gradeHeaderImportance"
       />
       
+      <ResponseSchemaSection :request="request" />
+
       <SetCookiesSection 
         :request="request"
         :all-requests="allRequests"
       />
+
+      <div class="divider"></div>
       
       <SessionAnalysisSection :request="request" />
       
       <BotDetectionSection :request="request" />
       
-      <ResponseSchemaSection :request="request" />
     </div>
   </div>
 </template>
@@ -339,87 +346,6 @@ onUnmounted(() => {
   white-space: normal;
 }
 
-:deep(.details-data .cookie-item) {
-  padding: 4px 6px;
-  margin-bottom: 2px;
-  background: var(--color-bg-white);
-  border-left: 3px solid var(--color-success);
-  padding-left: 8px;
-  line-height: 1.3;
-  display: block;
-  height: auto;
-  min-height: 0;
-  white-space: normal;
-}
-
-:deep(.details-data .cookie-header) {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  line-height: 1.3;
-  min-height: 0;
-}
-
-:deep(.details-data .cookie-name) {
-  font-weight: 600;
-  color: var(--color-success-dark);
-  min-width: 150px;
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-:deep(.details-data .cookie-value) {
-  color: var(--color-text-secondary);
-  font-size: 11px;
-  flex: 1;
-  word-break: break-word;
-  min-height: 0;
-  line-height: 1.3;
-}
-
-:deep(.details-data .cookie-expand) {
-  color: var(--color-primary);
-  cursor: pointer;
-  text-decoration: underline;
-  margin-left: 4px;
-  font-size: 10px;
-  user-select: none;
-}
-
-:deep(.details-data .cookie-expand:hover) {
-  color: var(--color-primary-hover);
-}
-
-:deep(.details-data .cookie-expand.expanded) {
-  color: var(--color-error);
-}
-
-:deep(.details-data .cookie-attributes) {
-  font-size: 10px;
-  color: var(--color-text-tertiary);
-  margin-top: 2px;
-  line-height: 1.2;
-}
-
-:deep(.details-data .cookie-usage) {
-  margin-top: 4px;
-  font-size: 11px;
-  font-style: italic;
-  padding-top: 4px;
-  border-top: 1px solid var(--color-border);
-}
-
-:deep(.details-data .cookie-usage.cookie-used) {
-  color: var(--color-success-dark);
-}
-
-:deep(.details-data .cookie-usage.cookie-unused) {
-  color: var(--color-text-tertiary);
-}
-
 :deep(.details-data .session-indicator) {
   display: inline-block;
   padding: 2px 6px;
@@ -495,6 +421,14 @@ onUnmounted(() => {
   border: 1px solid var(--color-border);
   border-radius: 4px;
   padding: 8px;
+}
+
+.divider {
+  width: 100%;
+  height: 1px;
+  margin-top: -15px;
+  margin-bottom: 15px;
+  border-bottom: 2px solid var(--color-primary-divider)
 }
 </style>
 
