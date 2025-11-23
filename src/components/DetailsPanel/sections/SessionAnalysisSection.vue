@@ -1,5 +1,5 @@
 <template>
-  <DetailsSection title="Session Analysis" :collapsed="true">
+  <DetailsSection title="Session Analysis" :collapsed="false">
     <SessionAnalysis :session="request.session" />
   </DetailsSection>
 </template>

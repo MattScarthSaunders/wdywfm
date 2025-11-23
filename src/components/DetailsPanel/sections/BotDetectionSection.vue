@@ -1,5 +1,5 @@
 <template>
-  <DetailsSection title="Bot Detection Analysis" :collapsed="true">
+  <DetailsSection title="Bot Detection Analysis" :collapsed="false">
     <BotDetection :bot-detection="request.botDetection" />
   </DetailsSection>
 </template>
