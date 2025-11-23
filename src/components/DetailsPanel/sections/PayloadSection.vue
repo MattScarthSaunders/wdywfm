@@ -87,6 +87,7 @@ import type { NetworkRequest } from '../../../types';
 import { PayloadFormatter, type PayloadSection } from '../../../services/PayloadFormatter';
 import { TypeScriptSchemaService } from '../../../services/TypeScriptSchemaService';
 import { ClipboardService } from '../../../services/ClipboardService';
+import { HeaderFormatter } from '../../../services/HeaderFormatter';
 import DetailsSection from '../DetailsSection.vue';
 import PayloadData from '../components/PayloadData.vue';
 import PayloadJson from '../components/PayloadJson.vue';
@@ -127,9 +128,7 @@ const isValidJson = computed(() => {
   }
 
   try {
-    const contentType = (props.request.requestHeaders['content-type'] || 
-                        props.request.requestHeaders['Content-Type'] || 
-                        '').toString().toLowerCase();
+    const contentType = (HeaderFormatter.getHeader(props.request.requestHeaders, 'content-type') || '').toLowerCase();
     
     if (!contentType.includes('application/json') && 
         !contentType.includes('text/json') &&

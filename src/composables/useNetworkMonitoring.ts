@@ -1,5 +1,6 @@
 import type { NetworkRequest } from '../types';
 import { sessionDetector, botDetector, cookieParser, formatter } from '../utils';
+import { HeaderFormatter } from '../services/HeaderFormatter';
 
 let requestCounter = 0;
 
@@ -50,13 +51,11 @@ export function useNetworkMonitoring(options: { onRequest: (request: NetworkRequ
 
       if (request.request.headers) {
         for (const header of request.request.headers) {
-          const headerName = header.name.toLowerCase();
           requestData.requestHeaders[header.name] = header.value;
-          requestData.requestHeaders[headerName] = header.value;
         }
       }
 
-      const cookieHeader = requestData.requestHeaders['cookie'] || requestData.requestHeaders['Cookie'];
+      const cookieHeader = HeaderFormatter.getHeader(requestData.requestHeaders, 'cookie');
       if (cookieHeader) {
         requestData.cookies = cookieParser.parseCookie(cookieHeader);
       }

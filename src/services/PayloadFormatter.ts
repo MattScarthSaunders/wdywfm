@@ -1,4 +1,5 @@
 import type { NetworkRequest } from '../types';
+import { HeaderFormatter } from './HeaderFormatter';
 
 export type PayloadSection = 
   | { type: 'data'; title: string; items: Array<{ key: string; value: string }>; rawValue?: string }
@@ -29,7 +30,7 @@ export class PayloadFormatter {
     }
     
     if (request.postData) {
-      const contentType = (request.requestHeaders['content-type'] || '').toLowerCase();
+      const contentType = (HeaderFormatter.getHeader(request.requestHeaders, 'content-type') || '').toLowerCase();
       
       if (contentType.includes('application/x-www-form-urlencoded')) {
         try {

@@ -5,6 +5,25 @@ export interface Header {
 }
 
 export class HeaderFormatter {
+
+  static getHeader(headers: Record<string, string | string[]>, headerName: string): string | undefined {
+    if (!headers || !headerName) return undefined;
+    
+    if (headers[headerName] !== undefined) {
+      const value = headers[headerName];
+      return Array.isArray(value) ? value[0] : value;
+    }
+    
+    const lowerName = headerName.toLowerCase();
+    for (const [key, value] of Object.entries(headers)) {
+      if (key.toLowerCase() === lowerName) {
+        return Array.isArray(value) ? value[0] : value;
+      }
+    }
+    
+    return undefined;
+  }
+
   static getHeaderImportance(headerName: string): string {
     if (!headerName) return 'unknown';
     const normalizedName = headerName.toLowerCase();
