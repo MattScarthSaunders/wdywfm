@@ -1,82 +1,103 @@
+interface SchemaGenerationResult {
+  type: string;
+  interfaces: Map<string, string>;
+}
+
 export class TypeScriptSchemaService {
-  /**
-   * Generates a TypeScript interface/type schema from a JSON object
-   */
+
   static generateSchema(json: any, interfaceName: string = 'Response'): string {
     if (json === null || json === undefined) {
       return `export type ${interfaceName} = null;`;
     }
 
-    const schema = this.generateType(json, interfaceName, 0);
-    return schema;
+    const result = this.generateType(json, '', new Map<string, string>(), new Set<string>());
+    const interfaces = Array.from(result.interfaces.values());
+    const mainInterface = this.formatAsInterface(result.type, interfaceName);
+    
+    if (interfaces.length > 0) {
+      return [...interfaces, mainInterface].join('\n\n');
+    }
+    return mainInterface;
   }
 
-  private static generateType(value: any, name: string, depth: number): string {
-    const indent = '  '.repeat(depth);
-    const nextIndent = '  '.repeat(depth + 1);
-
+  private static generateType(
+    value: any, 
+    propertyKey: string, 
+    interfaces: Map<string, string>,
+    visited: Set<string>
+  ): SchemaGenerationResult {
     if (value === null) {
-      return `${indent}null`;
+      return { type: 'null', interfaces };
     }
 
     const type = typeof value;
 
     switch (type) {
       case 'boolean':
-        return `${indent}boolean`;
+        return { type: 'boolean', interfaces };
       case 'number':
-        return `${indent}number`;
+        return { type: 'number', interfaces };
       case 'string':
-        return `${indent}string`;
+        return { type: 'string', interfaces };
       case 'object':
         if (Array.isArray(value)) {
           if (value.length === 0) {
-            return `${indent}unknown[]`;
+            return { type: 'unknown[]', interfaces };
           }
-          // Check if all items have the same structure
+          
           const firstItem = value[0];
-          const itemType = this.generateType(firstItem, 'Item', depth + 1);
-          // Remove indentation from itemType for array syntax
-          const cleanItemType = itemType.trim();
-          // Handle nested objects in arrays
-          if (cleanItemType.startsWith('{')) {
-            return `${indent}Array<${cleanItemType}>`;
+          const itemInterfaceName = this.toPascalCase(propertyKey);
+          const itemResult = this.generateType(firstItem, itemInterfaceName, interfaces, visited);
+          
+          itemResult.interfaces.forEach((iface, key) => {
+            interfaces.set(key, iface);
+          });
+          
+          if (itemResult.type.startsWith('{')) {
+            if (!interfaces.has(itemInterfaceName)) {
+              const itemInterface = this.formatAsInterface(itemResult.type, itemInterfaceName);
+              interfaces.set(itemInterfaceName, itemInterface);
+            }
+            return { type: `Array<${itemInterfaceName}>`, interfaces };
           }
-          return `${indent}${cleanItemType}[]`;
+          
+          return { type: `${itemResult.type}[]`, interfaces };
         } else {
-          // Object type
           const properties: string[] = [];
 
           for (const key in value) {
             if (value.hasOwnProperty(key)) {
               const propValue = value[key];
-              const propType = this.generateType(propValue, this.toPascalCase(key), depth + 1);
-              // Remove leading indentation and adjust for property
-              let cleanPropType = propType.trim();
+              const propInterfaceName = this.toPascalCase(key);
+              const propResult = this.generateType(propValue, propInterfaceName, interfaces, visited);
+              let propType = propResult.type;
               
-              // If it's a multi-line type (object or array), we need to indent it properly
-              if (cleanPropType.includes('\n')) {
-                const lines = cleanPropType.split('\n');
-                const indentedLines = lines.map((line, idx) => {
-                  if (idx === 0) return line;
-                  return nextIndent + line.trimStart();
-                });
-                cleanPropType = indentedLines.join('\n');
+              if (propResult.type.startsWith('{')) {
+                if (interfaces.has(propInterfaceName)) {
+                  propType = propInterfaceName;
+                } else {
+                  const propInterface = this.formatAsInterface(propResult.type, propInterfaceName);
+                  interfaces.set(propInterfaceName, propInterface);
+                  propType = propInterfaceName;
+                }
+              } else if (propResult.type.startsWith('Array<')) {
+                propType = propResult.type;
               }
               
               const safeKey = this.isValidIdentifier(key) ? key : `"${key}"`;
-              properties.push(`${nextIndent}${safeKey}: ${cleanPropType};`);
+              properties.push(`  ${safeKey}: ${propType};`);
             }
           }
 
           if (properties.length === 0) {
-            return `${indent}Record<string, unknown>`;
+            return { type: 'Record<string, unknown>', interfaces };
           }
 
-          return `${indent}{\n${properties.join('\n')}\n${indent}}`;
+          const objectType = `{\n${properties.join('\n')}\n}`;
+          return { type: objectType, interfaces };
         }
       default:
-        return `${indent}unknown`;
+        return { type: 'unknown', interfaces };
     }
   }
 
@@ -92,25 +113,15 @@ export class TypeScriptSchemaService {
     return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(str);
   }
 
-  /**
-   * Formats the schema as a complete TypeScript interface
-   */
   static formatAsInterface(schema: string, interfaceName: string = 'Response'): string {
-    // Remove leading indentation from schema
     const cleanSchema = schema.trim();
-    
-    // If it's already a simple type, wrap it
     if (!cleanSchema.startsWith('{')) {
       return `export interface ${interfaceName} {\n  data: ${cleanSchema};\n}`;
     }
-
     return `export interface ${interfaceName} ${cleanSchema}`;
   }
 
-  /**
-   * Gets response body from Chrome DevTools API
-   */
-  static async getResponseBody(requestId: string): Promise<string | null> {
+  static async getResponseBody(_requestId: string): Promise<string | null> {
     return new Promise((resolve) => {
       try {
         if (typeof chrome === 'undefined' || !chrome.devtools || !chrome.devtools.network) {
@@ -124,22 +135,16 @@ export class TypeScriptSchemaService {
         // For now, we'll return null and handle it in the component
         resolve(null);
       } catch (error) {
-        console.error('Error getting response body:', error);
         resolve(null);
       }
     });
   }
 
-  /**
-   * Generates TypeScript schema from response body string
-   */
   static generateSchemaFromResponseBody(responseBody: string, interfaceName: string = 'Response'): string | null {
     try {
       const json = JSON.parse(responseBody);
-      const schema = this.generateType(json, interfaceName, 0);
-      return this.formatAsInterface(schema, interfaceName);
+      return this.generateSchema(json, interfaceName);
     } catch (error) {
-      // If it's not valid JSON, return null
       return null;
     }
   }

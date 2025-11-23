@@ -100,14 +100,12 @@ const isValidJson = computed(() => {
                         props.request.responseHeaders['Content-Type'] || 
                         '').toString().toLowerCase();
     
-    // Only generate schema for JSON responses
     if (!contentType.includes('application/json') && 
         !contentType.includes('text/json') &&
         !contentType.includes('application/vnd.api+json')) {
       return false;
     }
 
-    // Try to parse as JSON to verify it's valid
     JSON.parse(props.request.responseBody!);
     return true;
   } catch (e) {
@@ -147,7 +145,6 @@ function getInterfaceName(url: string): string {
     const pathParts = urlObj.pathname.split('/').filter(p => p);
     if (pathParts.length > 0) {
       const lastPart = pathParts[pathParts.length - 1];
-      // Convert to PascalCase
       return lastPart
         .split(/[-_]/)
         .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())

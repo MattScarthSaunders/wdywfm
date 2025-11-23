@@ -4,9 +4,6 @@ import { sessionDetector, botDetector, cookieParser, formatter } from '../utils'
 let requestCounter = 0;
 
 export function useNetworkMonitoring(options: { onRequest: (request: NetworkRequest) => void }) {
-  if (typeof window === 'undefined') {
-    console.warn('useNetworkMonitoring: window is undefined');
-  }
   function processRequest(request: chrome.devtools.network.Request) {
     try {
       let contentType = '';
@@ -73,24 +70,20 @@ export function useNetworkMonitoring(options: { onRequest: (request: NetworkRequ
       }
 
       requestData.session = sessionDetector.isSessionRequest(requestData);
-
       requestData.botDetection = botDetector.detect(requestData);
 
-      // Send initial request data
       options.onRequest(requestData);
 
-      // Fetch response body asynchronously if available
       if (request.getContent && request.response) {
         request.getContent((content) => {
           if (content) {
             requestData.responseBody = content;
-            // Update the request with response body (this will trigger a reactive update)
             options.onRequest({ ...requestData });
           }
         });
       }
     } catch (error) {
-      console.error('Error processing request:', error);
+      console.error('Error processing request:', error); // we can't see this afaik, but hey maybe im wrong and its visible somewhere
     }
   }
 
@@ -115,14 +108,11 @@ export function useNetworkMonitoring(options: { onRequest: (request: NetworkRequ
     const networkAPI = getNetworkAPI();
     
     if (!networkAPI) {
-      console.warn('Chrome DevTools API not available, retrying...');
       setTimeout(() => {
         const retryAPI = getNetworkAPI();
         if (retryAPI) {
           startMonitoring();
-        } else {
-          console.error('Chrome DevTools API still not available after retry');
-        }
+        } 
       }, 200);
       return;
     }
@@ -131,14 +121,6 @@ export function useNetworkMonitoring(options: { onRequest: (request: NetworkRequ
       if (networkAPI.onRequestFinished && typeof networkAPI.onRequestFinished.addListener === 'function') {
         networkAPI.onRequestFinished.addListener((request) => {
           processRequest(request);
-        });
-      } else {
-        console.error('onRequestFinished.addListener is not available');
-      }
-
-      if (networkAPI.onRequestWillBeSent && typeof networkAPI.onRequestWillBeSent.addListener === 'function') {
-        networkAPI.onRequestWillBeSent.addListener(() => {
-          // Reserved for future use
         });
       }
     } catch (error) {
