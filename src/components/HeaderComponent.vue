@@ -56,16 +56,18 @@ defineEmits<{
 .filter-input {
   flex: 1;
   padding: 6px 10px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border-input);
   border-radius: 4px;
   font-size: 12px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background: var(--color-bg-white);
+  color: var(--color-text-primary);
 }
 
 .filter-input:focus {
   outline: none;
   border-color: var(--color-primary-alt);
-  box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.1);
+  box-shadow: 0 0 0 2px var(--color-primary-shadow);
 }
 
 .clear-btn {
@@ -75,6 +77,7 @@ defineEmits<{
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
+  color: var(--color-text-primary);
 }
 
 .clear-btn:hover {

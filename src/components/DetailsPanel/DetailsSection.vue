@@ -121,7 +121,7 @@ function toggleCollapse() {
   padding: 2px 8px;
   background: var(--color-bg-light);
   color: var(--color-text-primary);
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border-input);
   border-radius: 3px;
   cursor: pointer;
   font-size: 10px;

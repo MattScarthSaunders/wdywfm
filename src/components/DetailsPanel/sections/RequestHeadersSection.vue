@@ -96,7 +96,7 @@ async function copyRequestHeaders() {
   padding: 4px;
   background: var(--color-bg-light);
   color: var(--color-text-secondary);
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border-input);
   border-radius: 3px;
   cursor: pointer;
   transition: all 0.2s;
@@ -159,7 +159,7 @@ async function copyRequestHeaders() {
   padding: 4px;
   background: var(--color-bg-light);
   color: var(--color-text-secondary);
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border-input);
   border-radius: 3px;
   cursor: pointer;
   transition: all 0.2s;

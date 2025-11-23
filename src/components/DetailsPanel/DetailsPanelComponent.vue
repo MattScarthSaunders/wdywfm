@@ -148,8 +148,8 @@ onUnmounted(() => {
   min-width: 300px;
   max-width: 90vw;
   height: 100vh;
-  background: white;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+  background: var(--color-bg-white);
+  box-shadow: -2px 0 8px var(--color-shadow);
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -163,14 +163,14 @@ onUnmounted(() => {
   width: 8px;
   height: 100%;
   cursor: col-resize;
-  background: rgba(0, 120, 212, 0.1);
+  background: var(--color-primary-shadow);
   z-index: 1002;
   touch-action: none;
   pointer-events: auto;
 }
 
 .panel-resize-handle:hover {
-  background: rgba(0, 120, 212, 0.5);
+  background: var(--color-primary-shadow-hover);
 }
 
 .panel-resize-handle.active {

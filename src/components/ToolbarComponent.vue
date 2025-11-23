@@ -62,6 +62,7 @@ defineEmits<{
   border-radius: 3px;
   cursor: pointer;
   font-size: 11px;
+  color: var(--color-text-primary);
 }
 
 .toolbar-btn:hover {
@@ -74,6 +75,7 @@ defineEmits<{
   gap: 4px;
   font-size: 11px;
   cursor: pointer;
+  color: var(--color-text-primary);
 }
 
 .checkbox-label-inline {

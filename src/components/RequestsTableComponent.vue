@@ -133,7 +133,7 @@ const cookieRecipientIds = computed(() => {
 
 .requests-table td {
   padding: 6px 8px;
-  border-bottom: 1px solid #eee; /* EEEEEEEEE! */
+  border-bottom: 1px solid var(--color-border-lighter);
 }
 
 .requests-table tbody tr {
