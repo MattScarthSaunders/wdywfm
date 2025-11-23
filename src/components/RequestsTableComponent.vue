@@ -4,15 +4,14 @@
       <thead>
         <tr>
           <th class="col-id">ID</th>
-          <th ref="nameColumnRef" class="col-name" :style="{ width: nameColumnWidth + 'px' }">
+          <th class="col-name">
             <span>Name</span>
-            <div ref="nameResizeHandleRef" class="resize-handle" :class="{ active: isResizingName }" data-column="name"></div>
           </th>
-          <th class="col-method">Method</th>
-          <th class="col-status">Status</th>
-          <th class="col-type">Type</th>
-          <th class="col-size">Size</th>
-          <th class="col-time">Time</th>
+          <th class="col-method responsive-hide">Method</th>
+          <th class="col-status responsive-hide">Status</th>
+          <th class="col-type responsive-hide">Type</th>
+          <th class="col-size responsive-hide">Size</th>
+          <th class="col-time responsive-hide">Time</th>
           <th class="col-session">Session</th>
           <th class="col-bot">Bot Detection</th>
         </tr>
@@ -31,19 +30,19 @@
           @click="$emit('selectRequest', request)"
         >
           <td class="col-id">{{ request.requestNumber || '-' }}</td>
-          <td :title="request.url">{{ RequestFormatter.getRequestName(request.url) }}</td>
-          <td>
+          <td class="col-name" :title="request.url">{{ RequestFormatter.getRequestName(request.url) }}</td>
+          <td class="responsive-hide">
             <span :class="`method method-${request.method}`">{{ request.method }}</span>
           </td>
-          <td>
+          <td class="responsive-hide">
             <span v-if="request.status > 0" :class="`status-code ${RequestFormatter.getStatusClass(request.status)}`">
               {{ request.status }}
             </span>
             <span v-else>-</span>
           </td>
-          <td>{{ request.type || 'other' }}</td>
-          <td>{{ RequestFormatter.formatSize(request.size) }}</td>
-          <td>{{ RequestFormatter.formatTime(request.time) }}</td>
+          <td class="responsive-hide">{{ request.type || 'other' }}</td>
+          <td class="responsive-hide">{{ RequestFormatter.formatSize(request.size) }}</td>
+          <td class="responsive-hide">{{ RequestFormatter.formatTime(request.time) }}</td>
           <td>
             <span v-if="request.session.isSession" class="session-badge" :title="request.session.reason ?? undefined">
               Session
@@ -63,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { computed } from 'vue';
 import type { NetworkRequest } from '../types';
 import { CookieTracker } from '../services/CookieTracker';
 import { RequestFormatter } from '../services/RequestFormatter';
@@ -78,13 +77,6 @@ defineEmits<{
   selectRequest: [request: NetworkRequest];
 }>();
 
-const nameColumnRef = ref<HTMLElement | null>(null);
-const nameResizeHandleRef = ref<HTMLElement | null>(null);
-const nameColumnWidth = ref(400); // Default width, will be updated on mount
-const isResizingName = ref(false);
-const startX = ref(0);
-const startWidth = ref(0);
-
 const cookieSourceIds = computed(() => {
   if (!props.selectedRequest) {
     return new Set<string>();
@@ -98,85 +90,18 @@ const cookieRecipientIds = computed(() => {
   }
   return CookieTracker.findCookieRecipientRequests(props.selectedRequest, props.allRequests);
 });
-
-function loadNameColumnWidth() {
-  chrome.storage.local.get(['nameColumnWidth'], (result) => {
-    if (result.nameColumnWidth !== undefined) {
-      nameColumnWidth.value = Math.max(200, result.nameColumnWidth);
-    } else {
-      const table = document.querySelector('.requests-table') as HTMLElement;
-      if (table) {
-        nameColumnWidth.value = Math.max(200, table.offsetWidth * 0.4);
-      } else {
-        nameColumnWidth.value = 400; // fallback
-      }
-    }
-  });
-}
-
-function saveNameColumnWidth() {
-  chrome.storage.local.set({ nameColumnWidth: nameColumnWidth.value });
-}
-
-function handleNameMouseDown(e: MouseEvent) {
-  if (!nameResizeHandleRef.value || !nameColumnRef.value) return;
-  
-  isResizingName.value = true;
-  startX.value = e.clientX;
-  startWidth.value = nameColumnRef.value.offsetWidth;
-  
-  document.addEventListener('mousemove', handleNameMouseMove);
-  document.addEventListener('mouseup', handleNameMouseUp);
-  e.preventDefault();
-}
-
-function handleNameMouseMove(e: MouseEvent) {
-  if (!isResizingName.value || !nameColumnRef.value) return;
-  
-  const deltaX = e.clientX - startX.value;
-  const newWidth = startWidth.value + deltaX;
-  const minWidth = 200;
-  
-  nameColumnWidth.value = Math.max(minWidth, newWidth);
-}
-
-function handleNameMouseUp() {
-  if (isResizingName.value) {
-    isResizingName.value = false;
-    saveNameColumnWidth();
-  }
-  
-  document.removeEventListener('mousemove', handleNameMouseMove);
-  document.removeEventListener('mouseup', handleNameMouseUp);
-}
-
-onMounted(() => {
-  loadNameColumnWidth();
-  nextTick(() => {
-    if (nameResizeHandleRef.value) {
-      nameResizeHandleRef.value.addEventListener('mousedown', handleNameMouseDown);
-    }
-  });
-});
-
-onUnmounted(() => {
-  if (nameResizeHandleRef.value) {
-    nameResizeHandleRef.value.removeEventListener('mousedown', handleNameMouseDown);
-  }
-  document.removeEventListener('mousemove', handleNameMouseMove);
-  document.removeEventListener('mouseup', handleNameMouseUp);
-});
 </script>
 
 <style scoped>
 .table-container {
   flex: 1;
   overflow: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
 }
 
 .requests-table {
   width: 100%;
+  min-width: 310px; /* Minimum width: ID(50) + Name(50) + Session(80) + Bot(100) + padding */
   border-collapse: collapse;
   font-size: 11px;
   table-layout: fixed;
@@ -200,6 +125,10 @@ onUnmounted(() => {
 
 .requests-table th.col-name {
   padding-right: 12px;
+}
+
+.responsive-hide {
+  display: table-cell;
 }
 
 .requests-table td {
@@ -250,7 +179,8 @@ onUnmounted(() => {
 }
 
 .col-name {
-  min-width: 200px;
+  min-width: 50px;
+  width: auto;
   position: relative;
   overflow: hidden;
 }
@@ -264,71 +194,57 @@ onUnmounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 0;
-}
-
-.resize-handle {
-  position: absolute;
-  top: 0;
-  right: -2px;
-  width: 8px;
-  height: 100%;
-  cursor: col-resize;
-  background: rgba(0, 120, 212, 0.1);
-  z-index: 100;
-  touch-action: none;
-  pointer-events: auto;
-}
-
-.resize-handle:hover {
-  background: rgba(0, 120, 212, 0.5);
-}
-
-.resize-handle.active {
-  background: var(--color-primary-alt);
 }
 
 .col-id {
   width: 50px;
   min-width: 50px;
+  max-width: 50px;
   text-align: center;
   font-weight: 600;
   color: var(--color-text-secondary);
 }
 
 .col-method {
-  width: 8%;
+  width: 60px;
   min-width: 60px;
+  max-width: 60px;
 }
 
 .col-status {
-  width: 8%;
+  width: 70px;
   min-width: 70px;
+  max-width: 70px;
 }
 
 .col-type {
-  width: 10%;
+  width: 80px;
   min-width: 80px;
+  max-width: 80px;
 }
 
 .col-size {
-  width: 10%;
+  width: 80px;
   min-width: 80px;
+  max-width: 80px;
 }
 
 .col-time {
-  width: 8%;
+  width: 70px;
   min-width: 70px;
+  max-width: 70px;
 }
 
 .col-session {
-  width: 8%;
+  width: 80px;
   min-width: 80px;
+  max-width: 80px;
 }
 
 .col-bot {
-  width: 8%;
-  min-width: 80px;
+  width: 100px;
+  min-width: 100px;
+  max-width: 100px;
 }
 
 .status-code {
@@ -402,6 +318,14 @@ onUnmounted(() => {
   border-radius: 3px;
   font-size: 9px;
   font-weight: 600;
+}
+
+/* Responsive behavior: hide Method, Status, Type, Size, Time columns when window is small */
+/* Breakpoint calculated: ID(50) + Name(50) + Method(60) + Status(70) + Type(80) + Size(80) + Time(70) + Session(80) + Bot(100) = 640px + padding */
+@media (max-width: 700px) {
+  .responsive-hide {
+    display: none !important;
+  }
 }
 </style>
 
