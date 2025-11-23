@@ -8,6 +8,7 @@ Key features:
 - Bot Detection Detection: You aren't detecting ME, I'M detecting YOU attempting to detect ME
 - Cookie tracking to help with long-chain api step through: click on a request to get visual feedback on whether it uses data from another request earlier in the chain, and whether any depend on information from it <strong>(not including the response body...yet)</strong>
 - Headers as JSON, plus some experimental header-importance ranking: see which headers you'll almost certainly have to include at a glance, or just copy the whole lot in a single click
+- Response and Request body Typescript schema generation - attempts to generate a typescript schema from a json object with at least slightly intelligent naming and deduplication
 
 ## How to run
 
@@ -25,4 +26,4 @@ This is basically an extension for the network tab in devtools, and under the ho
 
 ## Future endeavours
 
-- response body parsing, analysis and similar functionality to what is happening with cookies - where does this data go? How is it used?
+- response body analysis and similar functionality to what is happening with cookies - where does this data go? How is it used? This will almost probably certainly never make it in, if I'm honest.
