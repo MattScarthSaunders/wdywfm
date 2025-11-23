@@ -23,6 +23,7 @@ declare namespace chrome {
           bodySize?: number;
         };
         time?: number;
+        getContent?(callback: (content: string, encoding: string) => void): void;
       }
       
       interface Event {

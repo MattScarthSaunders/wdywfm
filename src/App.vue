@@ -57,7 +57,19 @@ const { preserveLog, gradeHeaderImportance, hideJavaScript, hideAssets, loadSett
 
 const { startMonitoring } = useNetworkMonitoring({
   onRequest: (requestData: NetworkRequest) => {
-    requests.value.push(requestData);
+    // Check if request with same ID already exists (for updates)
+    const existingIndex = requests.value.findIndex(r => r.id === requestData.id);
+    if (existingIndex !== -1) {
+      // Update existing request
+      requests.value[existingIndex] = requestData;
+      // Update selected request if it's the same one
+      if (selectedRequest.value && selectedRequest.value.id === requestData.id) {
+        selectedRequest.value = requestData;
+      }
+    } else {
+      // Add new request
+      requests.value.push(requestData);
+    }
     applyFilters();
   }
 });

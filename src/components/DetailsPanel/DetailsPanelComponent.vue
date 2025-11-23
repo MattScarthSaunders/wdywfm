@@ -29,6 +29,8 @@
       <SessionAnalysisSection :request="request" />
       
       <BotDetectionSection :request="request" />
+      
+      <ResponseSchemaSection :request="request" />
     </div>
   </div>
 </template>
@@ -44,6 +46,7 @@ import ResponseHeadersSection from './sections/ResponseHeadersSection.vue';
 import SetCookiesSection from './sections/SetCookiesSection.vue';
 import SessionAnalysisSection from './sections/SessionAnalysisSection.vue';
 import BotDetectionSection from './sections/BotDetectionSection.vue';
+import ResponseSchemaSection from './sections/ResponseSchemaSection.vue';
 
 const props = defineProps<{
   request: NetworkRequest;

@@ -15,6 +15,7 @@ export interface NetworkRequest {
   session: SessionInfo;
   botDetection: BotDetectionInfo;
   postData: string | null;
+  responseBody?: string | null;
 }
 
 export interface Cookie {

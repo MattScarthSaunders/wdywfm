@@ -1,4 +1,3 @@
-import { ref } from 'vue';
 import type { NetworkRequest } from '../types';
 import { sessionDetector, botDetector, cookieParser, formatter } from '../utils';
 
@@ -77,7 +76,19 @@ export function useNetworkMonitoring(options: { onRequest: (request: NetworkRequ
 
       requestData.botDetection = botDetector.detect(requestData);
 
+      // Send initial request data
       options.onRequest(requestData);
+
+      // Fetch response body asynchronously if available
+      if (request.getContent && request.response) {
+        request.getContent((content) => {
+          if (content) {
+            requestData.responseBody = content;
+            // Update the request with response body (this will trigger a reactive update)
+            options.onRequest({ ...requestData });
+          }
+        });
+      }
     } catch (error) {
       console.error('Error processing request:', error);
     }
@@ -126,7 +137,8 @@ export function useNetworkMonitoring(options: { onRequest: (request: NetworkRequ
       }
 
       if (networkAPI.onRequestWillBeSent && typeof networkAPI.onRequestWillBeSent.addListener === 'function') {
-        networkAPI.onRequestWillBeSent.addListener((request) => {
+        networkAPI.onRequestWillBeSent.addListener(() => {
+          // Reserved for future use
         });
       }
     } catch (error) {
