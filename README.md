@@ -13,11 +13,13 @@ Key features:
 ## How to run
 
 1. Clone the repo locally
-2. Open Chrome
-3. Go to `chome://extensions/`
-4. `Load Unpacked` > select the repo
-5. Activate the extension
-6. Open devtools > WDYWFM
+2. Install dependencies with `npm i`
+3. Compile the project with `npm run build`
+4. Open Chrome
+5. Go to `chome://extensions/`
+6. `Load Unpacked` > select the repo `dist` directory created from the build step
+7. Activate the extension
+8. Open devtools > WDYWFM
 
 ## How To Use
 
