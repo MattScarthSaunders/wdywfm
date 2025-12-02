@@ -1,0 +1,6 @@
+---
+alwaysApply: true
+---
+- prefer to use `for...of` or `for...in` or just `for` loops over `forEach`
+- when writing vue component logic, if the logic extends beyond simple state assignment/manipulation, prefer to create a service class
+- when creating vue components, if it results in more than two new sub-components, create a directory named after the main component and create all related components in that directory.
