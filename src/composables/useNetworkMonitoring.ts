@@ -1,10 +1,11 @@
 import type { NetworkRequest } from '../types';
 import { sessionDetector, botDetector, cookieParser, formatter } from '../utils';
-import { HeaderFormatter } from '../services/HeaderFormatter';
+import { deps } from 'vue-cocoon';
 
 let requestCounter = 0;
 
 export function useNetworkMonitoring(options: { onRequest: (request: NetworkRequest) => void }) {
+  const { headerFormatter } = deps();
   function processRequest(request: chrome.devtools.network.Request) {
     try {
       let contentType = '';
@@ -55,7 +56,7 @@ export function useNetworkMonitoring(options: { onRequest: (request: NetworkRequ
         }
       }
 
-      const cookieHeader = HeaderFormatter.getHeader(requestData.requestHeaders, 'cookie');
+      const cookieHeader = headerFormatter.getHeader(requestData.requestHeaders, 'cookie');
       if (cookieHeader) {
         requestData.cookies = cookieParser.parseCookie(cookieHeader);
       }

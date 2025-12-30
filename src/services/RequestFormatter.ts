@@ -1,7 +1,7 @@
 import { formatter } from '../utils';
 
 export class RequestFormatter {
-  static getRequestName(url: string): string {
+  getRequestName(url: string): string {
     try {
       const urlObj = new URL(url);
       return urlObj.pathname.split('/').pop() || urlObj.pathname || urlObj.hostname;
@@ -10,22 +10,22 @@ export class RequestFormatter {
     }
   }
 
-  static getStatusClass(status: number): string {
+  getStatusClass(status: number): string {
     if (status >= 200 && status < 300) return 'status-2xx';
     if (status >= 300 && status < 400) return 'status-3xx';
     if (status >= 400 && status < 500) return 'status-4xx';
     return 'status-5xx';
   }
 
-  static formatSize(bytes: number): string {
+  formatSize(bytes: number): string {
     return formatter.formatSize(bytes);
   }
 
-  static formatTime(ms: number): string {
+  formatTime(ms: number): string {
     return formatter.formatTime(ms);
   }
 
-  static getRequestTitle(request: { requestNumber?: number; url: string }): string {
+  getRequestTitle(request: { requestNumber?: number; url: string }): string {
     const requestId = request.requestNumber || '?';
     let requestName: string;
     try {

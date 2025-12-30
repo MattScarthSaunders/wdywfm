@@ -1,6 +1,6 @@
 export class ClipboardService {
 
-  static async copyToClipboard(text: string): Promise<void> {
+  async copyToClipboard(text: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(text);
     } catch (err) {
@@ -15,16 +15,16 @@ export class ClipboardService {
     }
   }
 
-  static async copyUrl(url: string): Promise<void> {
+  async copyUrl(url: string): Promise<void> {
     return this.copyToClipboard(url);
   }
 
-  static async copyHeaders(headers: Record<string, string | string[]>): Promise<void> {
+  async copyHeaders(headers: Record<string, string | string[]>): Promise<void> {
     const jsonStr = JSON.stringify(headers, null, 2);
     return this.copyToClipboard(jsonStr);
   }
   
-  static async copyPayload(url: string, postData?: string): Promise<void> {
+  async copyPayload(url: string, postData?: string): Promise<void> {
     const jsonStr = JSON.stringify({ url, postData }, null, 2);
     return this.copyToClipboard(jsonStr);
   }

@@ -16,8 +16,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { deps } from 'vue-cocoon';
 import type { NetworkRequest } from '../../../types';
-import { CookieFormatter } from '../../../services/CookieFormatter';
 import DetailsSection from '../DetailsSection.vue';
 import CookieItem from '../components/CookieItem.vue';
 
@@ -26,8 +26,10 @@ const props = defineProps<{
   allRequests: NetworkRequest[];
 }>();
 
+const { cookieFormatter } = deps();
+
 const cookiesWithUsage = computed(() => {
-  return CookieFormatter.getCookiesWithUsage(props.request.setCookies, props.request, props.allRequests);
+  return cookieFormatter.getCookiesWithUsage(props.request.setCookies, props.request, props.allRequests);
 });
 </script>
 

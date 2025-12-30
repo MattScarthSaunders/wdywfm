@@ -71,15 +71,15 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { deps } from 'vue-cocoon';
 import type { NetworkRequest } from '../../../types';
-import { TypeScriptSchemaService } from '../../../services/TypeScriptSchemaService';
-import { ClipboardService } from '../../../services/ClipboardService';
 import DetailsSection from '../DetailsSection.vue';
 
 const props = defineProps<{
   request: NetworkRequest;
 }>();
 
+const { typeScriptSchemaService, clipboardService } = deps();
 const isJsonCopied = ref(false);
 const isSchemaCopied = ref(false);
 const loading = ref(false);
@@ -133,7 +133,7 @@ const schema = computed(() => {
 
   try {
     const interfaceName = getInterfaceName(props.request.url);
-    return TypeScriptSchemaService.generateSchemaFromResponseBody(props.request.responseBody!, interfaceName);
+    return typeScriptSchemaService.generateSchemaFromResponseBody(props.request.responseBody!, interfaceName);
   } catch (e) {
     return null;
   }
@@ -162,7 +162,7 @@ async function copyJson() {
     return;
   }
 
-  await ClipboardService.copyToClipboard(formattedJson.value);
+  await clipboardService.copyToClipboard(formattedJson.value);
   isJsonCopied.value = true;
   setTimeout(() => {
     isJsonCopied.value = false;
@@ -174,7 +174,7 @@ async function copySchema() {
     return;
   }
 
-  await ClipboardService.copyToClipboard(schema.value);
+  await clipboardService.copyToClipboard(schema.value);
   isSchemaCopied.value = true;
   setTimeout(() => {
     isSchemaCopied.value = false;

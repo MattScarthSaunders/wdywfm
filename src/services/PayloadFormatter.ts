@@ -1,5 +1,7 @@
 import type { NetworkRequest } from '../types';
-import { HeaderFormatter } from './HeaderFormatter';
+import type { HeaderFormatter } from './HeaderFormatter';
+import { deps } from "vue-cocoon";
+
 
 export type PayloadSection = 
   | { type: 'data'; title: string; items: Array<{ key: string; value: string }>; rawValue?: string }
@@ -7,7 +9,12 @@ export type PayloadSection =
   | { type: 'raw'; title: string; data: string };
 
 export class PayloadFormatter {
-  static getPayloadSections(request: NetworkRequest): PayloadSection[] {
+  private headerFormatter: HeaderFormatter;
+  constructor() {
+    this.headerFormatter = deps().headerFormatter;
+  }
+
+  getPayloadSections(request: NetworkRequest): PayloadSection[] {
     const sections: PayloadSection[] = [];
     
     try {
@@ -30,7 +37,7 @@ export class PayloadFormatter {
     }
     
     if (request.postData) {
-      const contentType = (HeaderFormatter.getHeader(request.requestHeaders, 'content-type') || '').toLowerCase();
+      const contentType = (this.headerFormatter.getHeader(request.requestHeaders, 'content-type') || '').toLowerCase();
       
       if (contentType.includes('application/x-www-form-urlencoded')) {
         try {

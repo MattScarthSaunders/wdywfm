@@ -2,7 +2,7 @@ import type { NetworkRequest } from '../types';
 import { formatter } from '../utils';
 
 export class DetailsFormatter {
-  static getGeneralInfo(request: NetworkRequest): {
+  getGeneralInfo(request: NetworkRequest): {
     url: string;
     method: string;
     status: number;

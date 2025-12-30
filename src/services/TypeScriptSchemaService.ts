@@ -6,7 +6,7 @@ interface SchemaGenerationResult {
 
 export class TypeScriptSchemaService {
 
-  static generateSchema(json: any, interfaceName: string = 'Response'): string {
+  generateSchema(json: any, interfaceName: string = 'Response'): string {
     if (json === null || json === undefined) {
       return `export type ${interfaceName} = null;`;
     }
@@ -21,7 +21,7 @@ export class TypeScriptSchemaService {
     return mainInterface;
   }
 
-  private static findOrCreateInterfaceName(
+  private findOrCreateInterfaceName(
     schema: string,
     baseName: string,
     parentKey: string,
@@ -79,11 +79,11 @@ export class TypeScriptSchemaService {
     return candidateName;
   }
 
-  private static normalizeSchema(schema: string): string {
+  private normalizeSchema(schema: string): string {
     return schema.replace(/\s+/g, ' ').trim();
   }
 
-  private static findNearestNamedProperty(propertyPath: string[]): string | null {
+  private findNearestNamedProperty(propertyPath: string[]): string | null {
     for (let i = propertyPath.length - 1; i >= 0; i--) {
       const prop = propertyPath[i];
       if (prop && prop.trim() !== '') {
@@ -93,7 +93,7 @@ export class TypeScriptSchemaService {
     return null;
   }
 
-  private static generateType(
+  private generateType(
     value: any, 
     propertyKey: string,
     parentKey: string,
@@ -224,7 +224,7 @@ export class TypeScriptSchemaService {
     }
   }
 
-  private static toPascalCase(str: string): string {
+  private toPascalCase(str: string): string {
     if (!str || str.trim() === '') {
       return '';
     }
@@ -237,11 +237,11 @@ export class TypeScriptSchemaService {
     return result || '';
   }
 
-  private static isValidIdentifier(str: string): boolean {
+  private isValidIdentifier(str: string): boolean {
     return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(str);
   }
 
-  static formatAsInterface(schema: string, interfaceName: string = 'Response'): string {
+  formatAsInterface(schema: string, interfaceName: string = 'Response'): string {
     const cleanSchema = schema.trim();
     if (!cleanSchema.startsWith('{')) {
       return `export interface ${interfaceName} {\n  data: ${cleanSchema};\n}`;
@@ -249,7 +249,7 @@ export class TypeScriptSchemaService {
     return `export interface ${interfaceName} ${cleanSchema}`;
   }
 
-  static async getResponseBody(_requestId: string): Promise<string | null> {
+  async getResponseBody(_requestId: string): Promise<string | null> {
     return new Promise((resolve) => {
       try {
         if (typeof chrome === 'undefined' || !chrome.devtools || !chrome.devtools.network) {
@@ -268,7 +268,7 @@ export class TypeScriptSchemaService {
     });
   }
 
-  static generateSchemaFromResponseBody(responseBody: string, interfaceName: string = 'Response'): string | null {
+  generateSchemaFromResponseBody(responseBody: string, interfaceName: string = 'Response'): string | null {
     try {
       const json = JSON.parse(responseBody);
       return this.generateSchema(json, interfaceName);

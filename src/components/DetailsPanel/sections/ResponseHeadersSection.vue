@@ -41,9 +41,8 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { deps } from 'vue-cocoon';
 import type { NetworkRequest } from '../../../types';
-import { HeaderFormatter } from '../../../services/HeaderFormatter';
-import { ClipboardService } from '../../../services/ClipboardService';
 import DetailsSection from '../DetailsSection.vue';
 import HeadersList from '../components/HeadersList.vue';
 import HeadersJson from '../components/HeadersJson.vue';
@@ -53,15 +52,16 @@ const props = defineProps<{
   gradeHeaderImportance: boolean;
 }>();
 
+const { headerFormatter, clipboardService } = deps();
 const viewMode = ref<'json' | 'formatted'>('formatted');
 const isCopied = ref(false);
 
 const headers = computed(() => {
-  return HeaderFormatter.getHeaders(props.request.responseHeaders, false);
+  return headerFormatter.getHeaders(props.request.responseHeaders, false);
 });
 
 async function copyResponseHeaders() {
-  await ClipboardService.copyHeaders(props.request.responseHeaders);
+  await clipboardService.copyHeaders(props.request.responseHeaders);
   isCopied.value = true;
   setTimeout(() => {
     isCopied.value = false;

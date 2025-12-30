@@ -83,11 +83,9 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { deps } from 'vue-cocoon';
 import type { NetworkRequest } from '../../../types';
-import { PayloadFormatter, type PayloadSection } from '../../../services/PayloadFormatter';
-import { TypeScriptSchemaService } from '../../../services/TypeScriptSchemaService';
-import { ClipboardService } from '../../../services/ClipboardService';
-import { HeaderFormatter } from '../../../services/HeaderFormatter';
+import type { PayloadSection } from '../../../services/PayloadFormatter';
 import DetailsSection from '../DetailsSection.vue';
 import PayloadData from '../components/PayloadData.vue';
 import PayloadJson from '../components/PayloadJson.vue';
@@ -97,13 +95,14 @@ const props = defineProps<{
   request: NetworkRequest;
 }>();
 
+const { payloadFormatter, typeScriptSchemaService, clipboardService, headerFormatter } = deps();
 const isBodyCopied = ref(false);
 const isSchemaCopied = ref(false);
 const isBodyCollapsed = ref(false);
 const isSchemaCollapsed = ref(false);
 
 const payloadSections = computed(() => {
-  return PayloadFormatter.getPayloadSections(props.request);
+  return payloadFormatter.getPayloadSections(props.request);
 });
 
 const dataSections = computed(() => {
@@ -128,7 +127,7 @@ const isValidJson = computed(() => {
   }
 
   try {
-    const contentType = (HeaderFormatter.getHeader(props.request.requestHeaders, 'content-type') || '').toLowerCase();
+    const contentType = (headerFormatter.getHeader(props.request.requestHeaders, 'content-type') || '').toLowerCase();
     
     if (!contentType.includes('application/json') && 
         !contentType.includes('text/json') &&
@@ -168,7 +167,7 @@ const schema = computed(() => {
   try {
     const json = JSON.parse(props.request.postData!);
     const interfaceName = getInterfaceName(props.request.url);
-    return TypeScriptSchemaService.generateSchema(json, interfaceName);
+    return typeScriptSchemaService.generateSchema(json, interfaceName);
   } catch (e) {
     return null;
   }
@@ -197,7 +196,7 @@ async function copyPayloadBody() {
   }
 
   const payloadToCopy = isValidJson.value ? formattedPayloadBody.value : props.request.postData!;
-  await ClipboardService.copyToClipboard(payloadToCopy);
+  await clipboardService.copyToClipboard(payloadToCopy);
   isBodyCopied.value = true;
   setTimeout(() => {
     isBodyCopied.value = false;
@@ -209,7 +208,7 @@ async function copySchema() {
     return;
   }
 
-  await ClipboardService.copyToClipboard(schema.value);
+  await clipboardService.copyToClipboard(schema.value);
   isSchemaCopied.value = true;
   setTimeout(() => {
     isSchemaCopied.value = false;

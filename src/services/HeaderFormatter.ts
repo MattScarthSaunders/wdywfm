@@ -6,7 +6,7 @@ export interface Header {
 
 export class HeaderFormatter {
 
-  static getHeader(headers: Record<string, string | string[]>, headerName: string): string | undefined {
+  getHeader(headers: Record<string, string | string[]>, headerName: string): string | undefined {
     if (!headers || !headerName) return undefined;
     
     if (headers[headerName] !== undefined) {
@@ -24,7 +24,7 @@ export class HeaderFormatter {
     return undefined;
   }
 
-  static getHeaderImportance(headerName: string): string {
+  getHeaderImportance(headerName: string): string {
     if (!headerName) return 'unknown';
     const normalizedName = headerName.toLowerCase();
     
@@ -68,7 +68,7 @@ export class HeaderFormatter {
     }
   }
 
-  static getHeaders(headers: Record<string, string | string[]>, gradeImportance: boolean): Header[] {
+  getHeaders(headers: Record<string, string | string[]>, gradeImportance: boolean): Header[] {
     if (!headers || Object.keys(headers).length === 0) {
       return [];
     }

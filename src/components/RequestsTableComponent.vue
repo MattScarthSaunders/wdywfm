@@ -30,19 +30,19 @@
           @click="$emit('selectRequest', request)"
         >
           <td class="col-id">{{ request.requestNumber || '-' }}</td>
-          <td class="col-name" :title="request.url">{{ RequestFormatter.getRequestName(request.url) }}</td>
+          <td class="col-name" :title="request.url">{{ requestFormatter.getRequestName(request.url) }}</td>
           <td class="responsive-hide">
             <span :class="`method method-${request.method}`">{{ request.method }}</span>
           </td>
           <td class="responsive-hide">
-            <span v-if="request.status > 0" :class="`status-code ${RequestFormatter.getStatusClass(request.status)}`">
+            <span v-if="request.status > 0" :class="`status-code ${requestFormatter.getStatusClass(request.status)}`">
               {{ request.status }}
             </span>
             <span v-else>-</span>
           </td>
           <td class="responsive-hide">{{ request.type || 'other' }}</td>
-          <td class="responsive-hide">{{ RequestFormatter.formatSize(request.size) }}</td>
-          <td class="responsive-hide">{{ RequestFormatter.formatTime(request.time) }}</td>
+          <td class="responsive-hide">{{ requestFormatter.formatSize(request.size) }}</td>
+          <td class="responsive-hide">{{ requestFormatter.formatTime(request.time) }}</td>
           <td>
             <span v-if="request.session.isSession" class="session-badge" :title="request.session.reason ?? undefined">
               Session
@@ -63,9 +63,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { deps } from 'vue-cocoon';
 import type { NetworkRequest } from '../types';
-import { CookieTracker } from '../services/CookieTracker';
-import { RequestFormatter } from '../services/RequestFormatter';
 
 const props = defineProps<{
   requests: NetworkRequest[];
@@ -77,18 +76,20 @@ defineEmits<{
   selectRequest: [request: NetworkRequest];
 }>();
 
+const { cookieTracker, requestFormatter } = deps();
+
 const cookieSourceIds = computed(() => {
   if (!props.selectedRequest) {
     return new Set<string>();
   }
-  return CookieTracker.findCookieSourceRequests(props.selectedRequest, props.allRequests);
+  return cookieTracker.findCookieSourceRequests(props.selectedRequest, props.allRequests);
 });
 
 const cookieRecipientIds = computed(() => {
   if (!props.selectedRequest) {
     return new Set<string>();
   }
-  return CookieTracker.findCookieRecipientRequests(props.selectedRequest, props.allRequests);
+  return cookieTracker.findCookieRecipientRequests(props.selectedRequest, props.allRequests);
 });
 </script>
 

@@ -25,23 +25,23 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { deps } from 'vue-cocoon';
 import type { NetworkRequest } from '../../../types';
-import { DetailsFormatter } from '../../../services/DetailsFormatter';
-import { ClipboardService } from '../../../services/ClipboardService';
 import DetailsSection from '../DetailsSection.vue';
 
 const props = defineProps<{
   request: NetworkRequest;
 }>();
 
+const { detailsFormatter, clipboardService } = deps();
 const isCopied = ref(false);
 
 const generalInfo = computed(() => {
-  return DetailsFormatter.getGeneralInfo(props.request);
+  return detailsFormatter.getGeneralInfo(props.request);
 });
 
 async function copyUrl() {
-  await ClipboardService.copyUrl(props.request.url);
+  await clipboardService.copyUrl(props.request.url);
   isCopied.value = true;
   setTimeout(() => {
     isCopied.value = false;

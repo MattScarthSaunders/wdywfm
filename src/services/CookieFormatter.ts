@@ -2,7 +2,7 @@ import type { NetworkRequest, ParsedCookie } from '../types';
 
 export class CookieFormatter {
 
-  private static findFirstSourceOfCookie(
+  private findFirstSourceOfCookie(
     cookieName: string,
     cookieValue: string,
     allRequests: NetworkRequest[]
@@ -39,7 +39,7 @@ export class CookieFormatter {
     return null;
   }
 
-  private static findAllUsagesOfCookie(
+  private findAllUsagesOfCookie(
     cookieName: string,
     cookieValue: string,
     sourceRequestIndex: number,
@@ -114,7 +114,7 @@ export class CookieFormatter {
     };
   }
 
-  static getCookiesWithUsage(
+  getCookiesWithUsage(
     cookies: ParsedCookie[] | undefined,
     request: NetworkRequest,
     allRequests: NetworkRequest[]

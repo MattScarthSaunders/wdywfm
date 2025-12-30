@@ -16,6 +16,7 @@
     "vue": "^3.4.15"
   },
   "dependencies": {
-    "@material-icons/svg": "^1.0.33"
+    "@material-icons/svg": "^1.0.33",
+    "vue-cocoon": "^1.0.1"
   }
 }

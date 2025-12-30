@@ -2,7 +2,7 @@ import type { NetworkRequest } from '../types';
 
 export class CookieTracker {
 
-  static findCookieSourceRequests(request: NetworkRequest, allRequests: NetworkRequest[]): Set<string> {
+  findCookieSourceRequests(request: NetworkRequest, allRequests: NetworkRequest[]): Set<string> {
     const cookieToClosestSource = new Map<string, string>();
     
     const cookieNames = this.extractCookieNamesFromCookies(request.cookies);
@@ -28,7 +28,7 @@ export class CookieTracker {
     return new Set(cookieToClosestSource.values());
   }
 
-  static findCookieRecipientRequests(request: NetworkRequest, allRequests: NetworkRequest[]): Set<string> {
+  findCookieRecipientRequests(request: NetworkRequest, allRequests: NetworkRequest[]): Set<string> {
     const recipientRequestIds = new Set<string>();
     
     const cookieNames = this.extractCookieNamesFromSetCookies(request.setCookies);
@@ -64,7 +64,7 @@ export class CookieTracker {
     return recipientRequestIds;
   }
 
-  private static extractCookieNamesFromCookies(cookies: any[] | undefined): Set<string> {
+  private extractCookieNamesFromCookies(cookies: any[] | undefined): Set<string> {
     const cookieNames = new Set<string>();
     
     if (!cookies || !Array.isArray(cookies) || cookies.length === 0) {
@@ -82,7 +82,7 @@ export class CookieTracker {
     return cookieNames;
   }
 
-  private static extractCookieNamesFromSetCookies(setCookies: any[] | undefined): Set<string> {
+  private extractCookieNamesFromSetCookies(setCookies: any[] | undefined): Set<string> {
     const cookieNames = new Set<string>();
     
     if (!setCookies || !Array.isArray(setCookies) || setCookies.length === 0) {
@@ -100,7 +100,7 @@ export class CookieTracker {
     return cookieNames;
   }
 
-  private static normalizeCookieName(name: any): string | null {
+  private normalizeCookieName(name: any): string | null {
     if (!name || typeof name !== 'string') {
       return null;
     }
@@ -109,11 +109,11 @@ export class CookieTracker {
     return normalized.length > 0 ? normalized : null;
   }
 
-  private static findRequestIndexById(requestId: string | number, allRequests: NetworkRequest[]): number {
+  private findRequestIndexById(requestId: string | number, allRequests: NetworkRequest[]): number {
     return allRequests.findIndex(r => String(r.id) === String(requestId));
   }
 
-  private static findMatchingCookieNames(set1: Set<string>, set2: Set<string>): Set<string> {
+  private findMatchingCookieNames(set1: Set<string>, set2: Set<string>): Set<string> {
     const matchingCookies = new Set<string>();
     for (const cookieName of set1) {
       if (set2.has(cookieName)) {
@@ -123,7 +123,7 @@ export class CookieTracker {
     return matchingCookies;
   }
 
-  private static processSetCookiesForSourceMapping(
+  private processSetCookiesForSourceMapping(
     req: NetworkRequest,
     cookieNames: Set<string>,
     cookieToClosestSource: Map<string, string>
@@ -144,7 +144,7 @@ export class CookieTracker {
     }
   }
 
-  private static isClosestSourceForCookies(
+  private isClosestSourceForCookies(
     requestId: string | number,
     matchingCookies: Set<string>,
     allRequests: NetworkRequest[],
@@ -165,7 +165,7 @@ export class CookieTracker {
     return false;
   }
 
-  private static findClosestSourceForCookie(
+  private findClosestSourceForCookie(
     cookieName: string,
     allRequests: NetworkRequest[],
     startIndex: number
@@ -184,7 +184,7 @@ export class CookieTracker {
     return null;
   }
 
-  private static doesRequestSetCookie(request: NetworkRequest, cookieName: string): boolean {
+  private doesRequestSetCookie(request: NetworkRequest, cookieName: string): boolean {
     if (!request.setCookies || !Array.isArray(request.setCookies)) {
       return false;
     }

@@ -44,8 +44,8 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { deps } from 'vue-cocoon';
 import type { NetworkRequest } from '../../types';
-import { RequestFormatter } from '../../services/RequestFormatter';
 import GeneralSection from './sections/GeneralSection.vue';
 import RequestHeadersSection from './sections/RequestHeadersSection.vue';
 import PayloadSection from './sections/PayloadSection.vue';
@@ -66,6 +66,7 @@ defineEmits<{
   'close': [];
 }>();
 
+const { requestFormatter } = deps();
 const panelRef = ref<HTMLElement | null>(null);
 const resizeHandleRef = ref<HTMLElement | null>(null);
 const panelWidth = ref(400);
@@ -75,7 +76,7 @@ const startWidth = ref(0);
 
 const requestTitle = computed(() => {
   const requestId = props.request.requestNumber || '?';
-  const requestName = RequestFormatter.getRequestName(props.request.url);
+  const requestName = requestFormatter.getRequestName(props.request.url);
   return `${requestId}: ${requestName}`;
 });
 
