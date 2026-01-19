@@ -467,6 +467,21 @@ export class BotDetector {
       ...responseCookies.map(c => `${c.name}=${c.value}`.toLowerCase())
     ];
 
+
+    const akamaiHeaders = Object.entries(responseHeaders).filter(h => {
+      if (Array.isArray(h[1])) {
+        return false
+      }
+      return h[0].toLowerCase().includes('akamai') ||
+      (h[0].toLowerCase() === 'server' &&
+       h[1].toLowerCase().includes('akamai'))
+    });
+
+    if (akamaiHeaders.length > 0) {
+      matchedProviders.add('Akamai')
+      indicators.push('Akamai headers detected')
+    }
+
     for (const provider of this.botDetectionProviders) {
       let matched = false;
 

@@ -134,4 +134,3 @@ input[type="search"]::placeholder,
 textarea::placeholder {
   color: var(--color-text-tertiary);
 }
-
