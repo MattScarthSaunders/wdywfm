@@ -6,27 +6,25 @@
       <button @click="$emit('close')" class="close-btn">✕</button>
     </div>
     <div class="details-content">
-      <div
+      <DetailsSection
         v-if="capturedValue && capturedPaths.length"
-        class="capture-summary"
+        title="Captured value & access paths"
+        :collapsed="false"
       >
-        <div class="capture-summary-title">
-          Captured value & access paths
+        <div class="capture-summary">
+          <div class="capture-summary-value">
+            <code>Value:{{ capturedValue }}</code>
+          </div>
+          <ul class="capture-summary-list">
+            <li
+              v-for="path in capturedPaths"
+              :key="path"
+            >
+              <code>{{ path }}</code>
+            </li>
+          </ul>
         </div>
-        <div class="capture-summary-value">
-          <code>{{ capturedValue }}</code>
-        </div>
-        <ul class="capture-summary-list">
-          <li
-            v-for="path in capturedPaths"
-            :key="path"
-          >
-            <code>{{ path }}</code>
-          </li>
-        </ul>
-
-        <div class="divider"></div>
-      </div>
+      </DetailsSection>
 
       <GeneralSection :request="request" />
       
@@ -69,6 +67,7 @@ import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { deps } from 'vue-cocoon';
 import type { NetworkRequest } from '../../types';
 import GeneralSection from './sections/GeneralSection.vue';
+import DetailsSection from './DetailsSection.vue';
 import RequestHeadersSection from './sections/RequestHeadersSection.vue';
 import PayloadSection from './sections/PayloadSection.vue';
 import ResponseHeadersSection from './sections/ResponseHeadersSection.vue';
@@ -256,20 +255,7 @@ onUnmounted(() => {
 }
 
 .capture-summary {
-  margin-bottom: 16px;
-  padding: 8px 10px;
-  border-radius: 4px;
-  background: var(--color-highlight-bg, #fff9c4);
-  border: 1px solid var(--color-highlight-border, #fbc02d);
-}
-
-.capture-summary-title {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--color-text-secondary);
-  margin-bottom: 4px;
+  margin-bottom: 0;
 }
 
 .capture-summary-value {
@@ -282,10 +268,25 @@ onUnmounted(() => {
   padding: 0;
   margin: 0;
   font-size: 11px;
+  word-break: break-word;
 }
 
 .capture-summary-list li + li {
   margin-top: 2px;
+}
+
+.capture-summary-list li {
+  padding: 2px 4px;
+}
+
+.capture-summary-list li:nth-child(odd) {
+  background: var(--color-bg-lighter);
+}
+
+.capture-summary-list li:nth-child(even) {
+  background: var(--color-bg-hover);
+  border-top: 1px solid var(--color-border-lighter);
+  border-bottom: 1px solid var(--color-border-lighter);
 }
 
 :deep(.details-data .header-row) {

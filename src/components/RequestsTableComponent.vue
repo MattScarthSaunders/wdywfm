@@ -188,8 +188,8 @@ const cookieRecipientIds = computed(() => {
 }
 
 .requests-table tbody tr.value-match {
-  background: var(--color-highlight-bg, #fff9c4);
-  border-left: 3px solid var(--color-highlight-border, #fbc02d);
+  outline: 2px dotted var(--color-highlight-border, #fbc02d);
+  outline-offset: -2px;
 }
 
 .col-name {
