@@ -6,6 +6,28 @@
       <button @click="$emit('close')" class="close-btn">✕</button>
     </div>
     <div class="details-content">
+      <div
+        v-if="capturedValue && capturedPaths.length"
+        class="capture-summary"
+      >
+        <div class="capture-summary-title">
+          Captured value & access paths
+        </div>
+        <div class="capture-summary-value">
+          <code>{{ capturedValue }}</code>
+        </div>
+        <ul class="capture-summary-list">
+          <li
+            v-for="path in capturedPaths"
+            :key="path"
+          >
+            <code>{{ path }}</code>
+          </li>
+        </ul>
+
+        <div class="divider"></div>
+      </div>
+
       <GeneralSection :request="request" />
       
       <div class="divider"></div>
@@ -59,6 +81,8 @@ const props = defineProps<{
   request: NetworkRequest;
   allRequests: NetworkRequest[];
   gradeHeaderImportance: boolean;
+  capturedValue: string | null;
+  capturedPaths: string[];
 }>();
 
 defineEmits<{
@@ -229,6 +253,39 @@ onUnmounted(() => {
   overflow-y: auto;
   scrollbar-gutter: stable;
   padding: 12px;
+}
+
+.capture-summary {
+  margin-bottom: 16px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  background: var(--color-highlight-bg, #fff9c4);
+  border: 1px solid var(--color-highlight-border, #fbc02d);
+}
+
+.capture-summary-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.capture-summary-value {
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+.capture-summary-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 11px;
+}
+
+.capture-summary-list li + li {
+  margin-top: 2px;
 }
 
 :deep(.details-data .header-row) {

@@ -31,7 +31,12 @@
           @click="$emit('selectRequest', request)"
         >
           <td class="col-id">{{ request.requestNumber || '-' }}</td>
-          <td class="col-name" :title="request.url">{{ requestFormatter.getRequestName(request.url) }}</td>
+          <td
+            class="col-name"
+            :title="valueMatchPaths[String(request.id)]?.join(' | ') || request.url"
+          >
+            {{ requestFormatter.getRequestName(request.url) }}
+          </td>
           <td class="responsive-hide">
             <span :class="`method method-${request.method}`">{{ request.method }}</span>
           </td>
@@ -72,6 +77,7 @@ const props = defineProps<{
   selectedRequest: NetworkRequest | null;
   allRequests: NetworkRequest[];
   valueMatchIds: Set<string>;
+  valueMatchPaths: Record<string, string[]>;
 }>();
 
 defineEmits<{

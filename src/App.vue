@@ -29,6 +29,7 @@
       :selected-request="selectedRequest"
       :all-requests="requests"
       :value-match-ids="valueMatchIds"
+      :value-match-paths="valueMatchPaths"
       @select-request="handleRequestSelect"
     />
 
@@ -37,6 +38,8 @@
       :request="selectedRequest"
       :all-requests="requests"
       :grade-header-importance="gradeHeaderImportance"
+      :captured-value="lastCapturedValue"
+      :captured-paths="valueMatchPaths[String(selectedRequest.id)] || []"
       @update:grade-header-importance="gradeHeaderImportance = $event"
       @close="selectedRequest = null"
     />
@@ -62,6 +65,7 @@ const captureModeEnabled = ref(false);
 const lastCapturedValue = ref<string | null>(null);
 const ignoreNumberPunctuation = ref(false);
 const valueMatchIds = ref<Set<string>>(new Set());
+const valueMatchPaths = ref<Record<string, string[]>>({});
 
 const { preserveLog, gradeHeaderImportance, hideJavaScript, hideAssets, loadSettings, saveSettings } = useSettings();
 
@@ -171,24 +175,79 @@ function updateValueMatches() {
   const raw = (lastCapturedValue.value || '').trim();
   if (!raw) {
     valueMatchIds.value = new Set();
+    valueMatchPaths.value = {};
     return;
   }
 
   const newMatches = new Set<string>();
+  const newPaths: Record<string, string[]> = {};
 
   for (const request of requests.value) {
     const id = String(request.id);
 
-    if (!request.responseBody) {
+    const body = request.responseBody;
+    if (!body || !body.includes(raw)) {
       continue;
     }
 
-    if (request.responseBody.includes(raw)) {
-      newMatches.add(id);
+    // Mark as a match
+    newMatches.add(id);
+
+    // Try to parse JSON and find structured paths
+    try {
+      const json = JSON.parse(body);
+      const pathsSet = new Set<string>();
+
+      function visit(node: unknown, segments: string[]) {
+        if (node === null || node === undefined) {
+          return;
+        }
+
+        const t = typeof node;
+        if (t === 'string' || t === 'number' || t === 'boolean') {
+          const asString = String(node);
+          if (asString.includes(raw)) {
+            const path = segments
+              .map((seg, index) => (seg === '*' ? '[*]' : index === 0 ? seg : `.${seg}`))
+              .join('');
+            if (path) {
+              pathsSet.add(path);
+            }
+          }
+          return;
+        }
+
+        if (Array.isArray(node)) {
+          segments.push('*');
+          for (const item of node) {
+            visit(item, segments);
+          }
+          segments.pop();
+          return;
+        }
+
+        if (t === 'object') {
+          for (const key in node as Record<string, unknown>) {
+            if (!Object.prototype.hasOwnProperty.call(node, key)) continue;
+            segments.push(key);
+            visit((node as Record<string, unknown>)[key], segments);
+            segments.pop();
+          }
+        }
+      }
+
+      visit(json, []);
+
+      if (pathsSet.size > 0) {
+        newPaths[id] = Array.from(pathsSet);
+      }
+    } catch {
+      // Not JSON, ignore structured paths
     }
   }
 
   valueMatchIds.value = newMatches;
+  valueMatchPaths.value = newPaths;
 }
 
 function toggleCaptureMode() {
