@@ -177,11 +177,6 @@ async function copySchema() {
   color: var(--color-error);
 }
 
-#detailsResponseSchema :deep(.details-data) {
-  background: transparent;
-  padding: 0;
-}
-
 .sub-display {
   margin: 0;
   border-radius: 3px;
@@ -194,6 +189,11 @@ async function copySchema() {
   max-height: 400px;
   color: var(--color-text-primary);
   background: var(--color-bg-light);
+}
+
+#detailsResponseSchema :deep(.details-data) {
+  background: transparent;
+  padding: 0;
 }
 </style>
 

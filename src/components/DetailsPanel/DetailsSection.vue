@@ -13,7 +13,7 @@
     </h3>
     <div 
       class="details-data section-content"
-      :class="{ collapsed: isCollapsed }"
+      :class="{ collapsed: isCollapsed, 'no-border': noBorder }"
       :style="{ maxHeight: isCollapsed ? '0' : '9999px' }"
     >
       <slot></slot>
@@ -27,6 +27,7 @@ import { ref } from 'vue';
 const props = defineProps<{
   title: string;
   collapsed?: boolean;
+  noBorder?: boolean;
 }>();
 
 const isCollapsed = ref(props.collapsed ?? false);
@@ -115,6 +116,12 @@ function toggleCollapse() {
   font-size: 11px;
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+.details-data.no-border {
+  border: none;
+  background: transparent;
+  padding: 0;
 }
 
 .toggle-view-btn {
