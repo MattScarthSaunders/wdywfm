@@ -10,6 +10,7 @@ import { HeaderFormatter } from './services/HeaderFormatter';
 import { PayloadFormatter } from './services/PayloadFormatter';
 import { RequestFormatter } from './services/RequestFormatter';
 import { TypeScriptSchemaService } from './services/TypeScriptSchemaService';
+import { ValueCaptureService } from './services/ValueCaptureService';
 
 const app = createApp(App);
 
@@ -22,6 +23,7 @@ registerDeps(app, {
   payloadFormatter: () => new PayloadFormatter(),
   requestFormatter: () => new RequestFormatter(),
   typeScriptSchemaService: () => new TypeScriptSchemaService(),
+  valueCaptureService: () => new ValueCaptureService(),
 });
 
 app.mount('#app');

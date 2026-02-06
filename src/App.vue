@@ -48,6 +48,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
+import { deps } from 'vue-cocoon';
 import type { NetworkRequest } from './types';
 import { filterParser } from './utils';
 import HeaderComponent from './components/HeaderComponent.vue';
@@ -66,6 +67,8 @@ const lastCapturedValue = ref<string | null>(null);
 const ignoreNumberPunctuation = ref(false);
 const valueMatchIds = ref<Set<string>>(new Set());
 const valueMatchPaths = ref<Record<string, string[]>>({});
+
+const { valueCaptureService } = deps();
 
 const { preserveLog, gradeHeaderImportance, hideJavaScript, hideAssets, loadSettings, saveSettings } = useSettings();
 
@@ -172,82 +175,13 @@ function exportData() {
 }
 
 function updateValueMatches() {
-  const raw = (lastCapturedValue.value || '').trim();
-  if (!raw) {
-    valueMatchIds.value = new Set();
-    valueMatchPaths.value = {};
-    return;
-  }
-
-  const newMatches = new Set<string>();
-  const newPaths: Record<string, string[]> = {};
-
-  for (const request of requests.value) {
-    const id = String(request.id);
-
-    const body = request.responseBody;
-    if (!body || !body.includes(raw)) {
-      continue;
-    }
-
-    // Mark as a match
-    newMatches.add(id);
-
-    // Try to parse JSON and find structured paths
-    try {
-      const json = JSON.parse(body);
-      const pathsSet = new Set<string>();
-
-      function visit(node: unknown, segments: string[]) {
-        if (node === null || node === undefined) {
-          return;
-        }
-
-        const t = typeof node;
-        if (t === 'string' || t === 'number' || t === 'boolean') {
-          const asString = String(node);
-          if (asString.includes(raw)) {
-            const path = segments
-              .map((seg, index) => (seg === '*' ? '[*]' : index === 0 ? seg : `.${seg}`))
-              .join('');
-            if (path) {
-              pathsSet.add(path);
-            }
-          }
-          return;
-        }
-
-        if (Array.isArray(node)) {
-          segments.push('*');
-          for (const item of node) {
-            visit(item, segments);
-          }
-          segments.pop();
-          return;
-        }
-
-        if (t === 'object') {
-          for (const key in node as Record<string, unknown>) {
-            if (!Object.prototype.hasOwnProperty.call(node, key)) continue;
-            segments.push(key);
-            visit((node as Record<string, unknown>)[key], segments);
-            segments.pop();
-          }
-        }
-      }
-
-      visit(json, []);
-
-      if (pathsSet.size > 0) {
-        newPaths[id] = Array.from(pathsSet);
-      }
-    } catch {
-      // Not JSON, ignore structured paths
-    }
-  }
-
-  valueMatchIds.value = newMatches;
-  valueMatchPaths.value = newPaths;
+  const { matchIds, matchPaths } = valueCaptureService.findMatches(
+    requests.value,
+    lastCapturedValue.value,
+    ignoreNumberPunctuation.value
+  );
+  valueMatchIds.value = matchIds;
+  valueMatchPaths.value = matchPaths;
 }
 
 function toggleCaptureMode() {
