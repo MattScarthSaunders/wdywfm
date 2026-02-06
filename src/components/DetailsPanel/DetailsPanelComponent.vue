@@ -13,16 +13,45 @@
       >
         <div class="capture-summary">
           <div class="capture-summary-value">
-            <code>Value:{{ capturedValue }}</code>
+            <code>Value: {{ capturedValue }}</code>
           </div>
+
           <ul class="capture-summary-list">
             <li
               v-for="path in capturedPaths"
               :key="path"
+              :class="{ 'capture-path-selected': selectedExample && selectedExample.path === path }"
+              @click="selectCapturedPath(path)"
             >
               <code>{{ path }}</code>
             </li>
           </ul>
+
+          <DetailsSection
+            v-if="capturedExamples.length"
+            title="Minimal example"
+            :collapsed="false"
+          >
+            <template #header-actions>
+              <div class="header-controls">
+                <button
+                  type="button"
+                  @click.stop="copySelectedExample"
+                  :class="['copy-btn', { copied: isExampleCopied }]"
+                  :title="isExampleCopied ? 'Copied!' : 'Copy JSON'"
+                >
+                  <span class="material-icons">{{ isExampleCopied ? 'check' : 'content_copy' }}</span>
+                </button>
+              </div>
+            </template>
+
+            <div v-if="selectedExample" class="capture-example-block">
+              <div class="capture-example-note">
+                All arrays truncated to first element for brevity.
+              </div>
+              <pre class="capture-example-json"><code>{{ selectedExample.example }}</code></pre>
+            </div>
+          </DetailsSection>
         </div>
       </DetailsSection>
 
@@ -89,13 +118,201 @@ defineEmits<{
   'close': [];
 }>();
 
-const { requestFormatter } = deps();
+const { requestFormatter, clipboardService } = deps();
 const panelRef = ref<HTMLElement | null>(null);
 const resizeHandleRef = ref<HTMLElement | null>(null);
 const panelWidth = ref(400);
 const isResizing = ref(false);
 const startX = ref(0);
 const startWidth = ref(0);
+
+const selectedPath = ref<string | null>(null);
+const isExampleCopied = ref(false);
+
+const capturedExamples = computed(() => {
+  const results: { path: string; example: string }[] = [];
+
+  if (!props.capturedPaths.length) {
+    return results;
+  }
+
+  const body = props.request.responseBody;
+  if (!body) {
+    return results;
+  }
+
+  let original: unknown;
+  try {
+    original = JSON.parse(body);
+  } catch {
+    return results;
+  }
+
+  const searchValue = props.capturedValue ?? '';
+
+  function nodeContainsValue(node: unknown, value: string): boolean {
+    if (node === null || node === undefined) {
+      return false;
+    }
+    const t = typeof node;
+    if (t === 'string' || t === 'number' || t === 'boolean') {
+      return String(node).includes(value);
+    }
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        if (nodeContainsValue(item, value)) return true;
+      }
+      return false;
+    }
+    if (t === 'object') {
+      for (const key in node as Record<string, unknown>) {
+        if (!Object.prototype.hasOwnProperty.call(node, key)) continue;
+        if (nodeContainsValue((node as Record<string, unknown>)[key], value)) return true;
+      }
+    }
+    return false;
+  }
+
+  for (const path of props.capturedPaths) {
+    // Deep clone the original JSON so we can safely trim arrays along this path
+    let clone: unknown;
+    try {
+      clone = JSON.parse(JSON.stringify(original));
+    } catch {
+      continue;
+    }
+
+    const tokens = path.split('.');
+    let origNode: unknown = original;
+    let cloneNode: unknown = clone;
+    let failed = false;
+
+    for (const token of tokens) {
+      const isArrayToken = token.endsWith('[*]');
+      const key = isArrayToken ? token.slice(0, -3) : token;
+
+      if (
+        origNode === null ||
+        origNode === undefined ||
+        typeof origNode !== 'object' ||
+        cloneNode === null ||
+        cloneNode === undefined ||
+        typeof cloneNode !== 'object'
+      ) {
+        failed = true;
+        break;
+      }
+
+      const origObj = origNode as Record<string, unknown>;
+      const cloneObj = cloneNode as Record<string, unknown>;
+
+      if (!(key in origObj) || !(key in cloneObj)) {
+        failed = true;
+        break;
+      }
+
+      if (isArrayToken) {
+        const origArr = origObj[key];
+        const cloneArr = cloneObj[key];
+        if (!Array.isArray(origArr) || !Array.isArray(cloneArr) || origArr.length === 0) {
+          failed = true;
+          break;
+        }
+
+        let chosenIndex = 0;
+        for (let i = 0; i < origArr.length; i++) {
+          if (nodeContainsValue(origArr[i], searchValue)) {
+            chosenIndex = i;
+            break;
+          }
+        }
+
+        const chosenOrig = origArr[chosenIndex];
+        const chosenClone = cloneArr[chosenIndex];
+        if (chosenClone === undefined) {
+          failed = true;
+          break;
+        }
+
+        // Trim the cloned array to just the chosen element
+        cloneObj[key] = [chosenClone];
+
+        origNode = chosenOrig;
+        cloneNode = chosenClone;
+      } else {
+        origNode = origObj[key];
+        cloneNode = cloneObj[key];
+        if (cloneNode === undefined) {
+          failed = true;
+          break;
+        }
+      }
+    }
+
+    if (failed) {
+      continue;
+    }
+
+    function trimArrays(node: unknown): void {
+      if (node === null || node === undefined) {
+        return;
+      }
+      if (Array.isArray(node)) {
+        if (node.length > 1) {
+          const first = node[0];
+          node.length = 1;
+          node[0] = first;
+        }
+        // Recurse into the first element (if any)
+        if (node[0] !== undefined && typeof node[0] === 'object') {
+          trimArrays(node[0]);
+        }
+        return;
+      }
+      if (typeof node === 'object') {
+        for (const key in node as Record<string, unknown>) {
+          if (!Object.prototype.hasOwnProperty.call(node, key)) continue;
+          trimArrays((node as Record<string, unknown>)[key]);
+        }
+      }
+    }
+
+    trimArrays(clone);
+
+    try {
+      const exampleStr = JSON.stringify(clone, null, 2);
+      results.push({ path, example: exampleStr });
+    } catch {
+      // ignore stringify errors
+    }
+  }
+
+  return results;
+});
+
+const selectedExample = computed(() => {
+  if (!capturedExamples.value.length) {
+    return null;
+  }
+  const targetPath = selectedPath.value || capturedExamples.value[0].path;
+  return capturedExamples.value.find((ex) => ex.path === targetPath) ?? capturedExamples.value[0];
+});
+
+function selectCapturedPath(path: string) {
+  selectedPath.value = path;
+}
+
+async function copySelectedExample() {
+  const ex = selectedExample.value;
+  if (!ex) {
+    return;
+  }
+  await clipboardService.copyToClipboard(ex.example);
+  isExampleCopied.value = true;
+  setTimeout(() => {
+    isExampleCopied.value = false;
+  }, 2000);
+}
 
 const requestTitle = computed(() => {
   const requestId = props.request.requestNumber || '?';
@@ -277,6 +494,7 @@ onUnmounted(() => {
 
 .capture-summary-list li {
   padding: 2px 4px;
+  cursor: pointer;
 }
 
 .capture-summary-list li:nth-child(odd) {
@@ -287,6 +505,52 @@ onUnmounted(() => {
   background: var(--color-bg-hover);
   border-top: 1px solid var(--color-border-lighter);
   border-bottom: 1px solid var(--color-border-lighter);
+}
+
+.capture-summary-list li.capture-path-selected code {
+  color: var(--color-primary);
+}
+
+.capture-examples {
+  margin-top: 8px;
+}
+
+.capture-examples-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.capture-examples-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.capture-example-block {
+  margin-bottom: 8px;
+}
+
+.capture-example-path {
+  font-size: 11px;
+  margin-bottom: 2px;
+  word-break: break-word;
+}
+
+.capture-example-json {
+  margin: 0;
+  background: var(--color-bg-light);
+  border-radius: 3px;
+  padding: 6px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 300px;
+  overflow: auto;
 }
 
 :deep(.details-data .header-row) {
@@ -366,7 +630,7 @@ onUnmounted(() => {
 }
 
 .copy-json-btn-header {
-  padding: 2px 8px;
+  padding: 4px;
   background: var(--color-primary);
   color: white;
   border: none;
@@ -376,6 +640,11 @@ onUnmounted(() => {
   font-weight: 500;
   transition: background-color 0.2s;
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
 }
 
 .copy-json-btn-header:hover {
@@ -383,6 +652,36 @@ onUnmounted(() => {
 }
 
 .copy-json-btn-header.copied {
+  background: var(--color-success);
+}
+
+.copy-btn {
+  padding: 4px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.copy-btn .material-icons {
+  font-size: 16px;
+}
+
+.copy-btn:hover {
+  background: var(--color-primary-hover);
+}
+
+.copy-btn.copied {
   background: var(--color-success);
 }
 
