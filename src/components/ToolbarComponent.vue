@@ -69,6 +69,7 @@ defineEmits<{
   background: var(--color-bg-light);
 }
 
+
 .checkbox-label {
   display: flex;
   align-items: center;

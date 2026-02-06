@@ -50,6 +50,7 @@ export default defineConfig({
         devtools: resolve(__dirname, 'src/devtools.html'),
         background: resolve(__dirname, 'src/background.ts'),
         devtoolsScript: resolve(__dirname, 'src/devtools.ts'),
+        contentScript: resolve(__dirname, 'src/contentScript.ts'),
       },
       output: {
         entryFileNames: (chunkInfo) => {
@@ -58,6 +59,9 @@ export default defineConfig({
           }
           if (chunkInfo.name === 'devtoolsScript') {
             return 'devtools.js';
+          }
+          if (chunkInfo.name === 'contentScript') {
+            return 'contentScript.js';
           }
           return 'assets/[name]-[hash].js';
         },

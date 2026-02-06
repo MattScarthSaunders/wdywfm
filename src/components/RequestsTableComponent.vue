@@ -25,7 +25,8 @@
             'bot-detection': request.botDetection.isBotDetection,
             'selected': selectedRequest?.id === request.id,
             'cookie-source': cookieSourceIds.has(String(request.id)),
-            'cookie-recipient': cookieRecipientIds.has(String(request.id))
+            'cookie-recipient': cookieRecipientIds.has(String(request.id)),
+            'value-match': valueMatchIds.has(String(request.id))
           }"
           @click="$emit('selectRequest', request)"
         >
@@ -70,6 +71,7 @@ const props = defineProps<{
   requests: NetworkRequest[];
   selectedRequest: NetworkRequest | null;
   allRequests: NetworkRequest[];
+  valueMatchIds: Set<string>;
 }>();
 
 defineEmits<{
@@ -177,6 +179,11 @@ const cookieRecipientIds = computed(() => {
 
 .requests-table tbody tr.bot-detection {
   border-left: 3px solid var(--color-error-variant);
+}
+
+.requests-table tbody tr.value-match {
+  background: var(--color-highlight-bg, #fff9c4);
+  border-left: 3px solid var(--color-highlight-border, #fbc02d);
 }
 
 .col-name {
