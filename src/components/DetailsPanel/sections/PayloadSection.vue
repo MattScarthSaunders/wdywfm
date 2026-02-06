@@ -15,13 +15,11 @@
                 <span class="subsection-toggle">▼</span>
                 <span class="subsection-title">Payload Body</span>
               </div>
-              <button 
-                @click.stop="copyPayloadBody" 
-                :class="['copy-btn', { copied: isBodyCopied }]"
-                :title="isBodyCopied ? 'Copied!' : 'Copy Payload Body'"
-              >
-                <span class="material-icons">{{ isBodyCopied ? 'check' : 'content_copy' }}</span>
-              </button>
+              <CopyButton
+                :copied="isBodyCopied"
+                :default-title="'Copy Payload Body'"
+                @click="copyPayloadBody"
+              />
             </div>
             <div 
               class="subsection-content"
@@ -58,14 +56,12 @@
                 <span class="subsection-toggle">▼</span>
                 <span class="subsection-title">TypeScript Schema</span>
               </div>
-              <button 
-                @click.stop="copySchema" 
-                :class="['copy-btn', { copied: isSchemaCopied }]"
-                :title="isSchemaCopied ? 'Copied!' : 'Copy TypeScript Schema'"
+              <CopyButton
+                :copied="isSchemaCopied"
+                :default-title="'Copy TypeScript Schema'"
                 :disabled="!schema"
-              >
-                <span class="material-icons">{{ isSchemaCopied ? 'check' : 'content_copy' }}</span>
-              </button>
+                @click="copySchema"
+              />
             </div>
             <div 
               class="subsection-content"
@@ -87,6 +83,7 @@ import { deps } from 'vue-cocoon';
 import type { NetworkRequest } from '../../../types';
 import type { PayloadSection } from '../../../services/PayloadFormatter';
 import DetailsSection from '../DetailsSection.vue';
+import CopyButton from '../components/CopyButton.vue';
 import PayloadData from '../components/PayloadData.vue';
 import PayloadJson from '../components/PayloadJson.vue';
 import PayloadRaw from '../components/PayloadRaw.vue';
@@ -106,15 +103,15 @@ const payloadSections = computed(() => {
 });
 
 const dataSections = computed(() => {
-  return payloadSections.value.filter((s): s is PayloadSection & { type: 'data' } => s.type === 'data');
+  return payloadSections.value.filter((s: PayloadSection): s is PayloadSection & { type: 'data' } => s.type === 'data');
 });
 
 const jsonSections = computed(() => {
-  return payloadSections.value.filter((s): s is PayloadSection & { type: 'json' } => s.type === 'json');
+  return payloadSections.value.filter((s: PayloadSection): s is PayloadSection & { type: 'json' } => s.type === 'json');
 });
 
 const rawSections = computed(() => {
-  return payloadSections.value.filter((s): s is PayloadSection & { type: 'raw' } => s.type === 'raw');
+  return payloadSections.value.filter((s: PayloadSection): s is PayloadSection & { type: 'raw' } => s.type === 'raw');
 });
 
 const hasPayload = computed(() => {
@@ -260,42 +257,6 @@ async function copySchema() {
 
 .subsection-header:hover .subsection-header-left {
   color: var(--color-text-primary);
-}
-
-.copy-btn {
-  padding: 4px;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 10px;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-}
-
-.copy-btn:disabled {
-  background: var(--color-text-tertiary);
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.copy-btn .material-icons {
-  font-size: 16px;
-}
-
-.copy-btn:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-}
-
-.copy-btn.copied {
-  background: var(--color-success);
 }
 
 .subsection-toggle {

@@ -26,16 +26,13 @@
         :collapsed="false"
       >
         <template #header-actions>
-          <div class="header-controls">
-            <button
-              type="button"
-              @click.stop="copySelectedExample"
-              :class="['copy-btn', { copied: isExampleCopied }]"
-              :title="isExampleCopied ? 'Copied!' : 'Copy JSON'"
-            >
-              <span class="material-icons">{{ isExampleCopied ? 'check' : 'content_copy' }}</span>
-            </button>
-          </div>
+          <HeaderControls>
+            <CopyButton
+              :copied="isExampleCopied"
+              :default-title="'Copy JSON'"
+              @click="copySelectedExample"
+            />
+          </HeaderControls>
         </template>
 
         <div v-if="selectedExample" class="capture-example-block">
@@ -54,6 +51,8 @@ import { computed, ref } from 'vue';
 import { deps } from 'vue-cocoon';
 import type { NetworkRequest } from '../../../types';
 import DetailsSection from '../DetailsSection.vue';
+import HeaderControls from '../components/HeaderControls.vue';
+import CopyButton from '../components/CopyButton.vue';
 
 const props = defineProps<{
   request: NetworkRequest;
@@ -161,36 +160,6 @@ async function copySelectedExample() {
   word-break: break-word;
   max-height: 300px;
   overflow: auto;
-}
-
-.copy-btn {
-  padding: 4px;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 10px;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-}
-
-.copy-btn .material-icons {
-  font-size: 16px;
-}
-
-.copy-btn:hover {
-  background: var(--color-primary-hover);
-}
-
-.copy-btn.copied {
-  background: var(--color-success);
 }
 </style>
 

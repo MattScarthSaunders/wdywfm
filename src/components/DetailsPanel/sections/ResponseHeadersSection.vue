@@ -1,7 +1,7 @@
 <template>
   <DetailsSection title="Response Headers" :collapsed="true">
     <template #header-actions>
-      <div class="header-controls">
+      <HeaderControls>
         <div class="view-mode-buttons">
           <button 
             @click.stop="viewMode = 'formatted'"
@@ -18,14 +18,12 @@
             <span class="material-icons">code</span>
           </button>
         </div>
-        <button 
-          @click.stop="copyResponseHeaders" 
-          :class="['copy-json-btn-header', { copied: isCopied }]"
-          :title="isCopied ? 'Copied!' : 'Copy JSON'"
-        >
-          <span class="material-icons">{{ isCopied ? 'check' : 'content_copy' }}</span>
-        </button>
-      </div>
+        <CopyButton
+          :copied="isCopied"
+          :default-title="'Copy JSON'"
+          @click="copyResponseHeaders"
+        />
+      </HeaderControls>
     </template>
     <HeadersList
       v-if="viewMode === 'formatted'"
@@ -44,6 +42,8 @@ import { computed, ref } from 'vue';
 import { deps } from 'vue-cocoon';
 import type { NetworkRequest } from '../../../types';
 import DetailsSection from '../DetailsSection.vue';
+import HeaderControls from '../components/HeaderControls.vue';
+import CopyButton from '../components/CopyButton.vue';
 import HeadersList from '../components/HeadersList.vue';
 import HeadersJson from '../components/HeadersJson.vue';
 
@@ -70,12 +70,6 @@ async function copyResponseHeaders() {
 </script>
 
 <style scoped>
-.header-controls {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .view-mode-buttons {
   display: flex;
   gap: 2px;
@@ -113,35 +107,6 @@ async function copyResponseHeaders() {
 
 .view-mode-btn.active:hover {
   background: var(--color-primary-hover);
-}
-
-.copy-json-btn-header {
-  padding: 4px;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 10px;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-}
-
-.copy-json-btn-header .material-icons {
-  font-size: 16px;
-}
-
-.copy-json-btn-header:hover {
-  background: var(--color-primary-hover);
-}
-
-.copy-json-btn-header.copied {
-  background: var(--color-success);
 }
 </style>
 
