@@ -43,14 +43,16 @@ const formattedJson = computed(() => {
 
 .json-display {
   margin: 0;
+  border-radius: 3px;
+  padding: 6px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 11px;
   white-space: pre-wrap;
   word-break: break-word;
-  overflow-x: auto;
+  overflow: auto;
   max-height: 400px;
-  overflow-y: auto;
   color: var(--color-text-primary);
+  background: var(--color-bg-light);
 }
 </style>
 

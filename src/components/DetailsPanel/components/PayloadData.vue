@@ -43,7 +43,7 @@ defineProps<{
 }
 
 .payload-table {
-  background: var(--color-bg-lighter);
+  background: var(--color-bg-light);
   border: 1px solid var(--color-border);
   border-radius: 4px;
   overflow: hidden;

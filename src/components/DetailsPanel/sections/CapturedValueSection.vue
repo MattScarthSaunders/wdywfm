@@ -103,6 +103,11 @@ async function copySelectedExample() {
   margin-bottom: 0;
 }
 
+.capture-summary :deep(.details-data) {
+  background: transparent;
+  padding: 0;
+}
+
 .capture-summary-value {
   margin-bottom: 4px;
   font-size: 11px;

@@ -5,55 +5,40 @@
         <div class="loading">Loading response body...</div>
       </template>
       <template v-else-if="hasResponseBody && isValidJson">
-        <div class="response-content">
-          <div class="subsection">
-            <div 
-              class="subsection-header" 
-              :class="{ collapsed: isJsonCollapsed }"
-            >
-              <div class="subsection-header-left" @click="isJsonCollapsed = !isJsonCollapsed">
-                <span class="subsection-toggle">▼</span>
-                <span class="subsection-title">Response Body (JSON)</span>
-              </div>
+        <DetailsSection
+          title="Response Body (JSON)"
+          :collapsed="false"
+        >
+          <template #header-actions>
+            <HeaderControls>
               <CopyButton
                 :copied="isJsonCopied"
                 :default-title="'Copy JSON'"
                 @click="copyJson"
               />
-            </div>
-            <div 
-              class="subsection-content"
-              :class="{ collapsed: isJsonCollapsed }"
-              :style="{ maxHeight: isJsonCollapsed ? '0' : '9999px' }"
-            >
-              <pre class="json-display">{{ formattedJson }}</pre>
-            </div>
-          </div>
-          <div class="subsection">
-            <div 
-              class="subsection-header" 
-              :class="{ collapsed: isSchemaCollapsed }"
-            >
-              <div class="subsection-header-left" @click="isSchemaCollapsed = !isSchemaCollapsed">
-                <span class="subsection-toggle">▼</span>
-                <span class="subsection-title">TypeScript Schema</span>
-              </div>
+            </HeaderControls>
+          </template>
+
+          <pre class="sub-display">{{ formattedJson }}</pre>
+        </DetailsSection>
+
+        <DetailsSection
+          title="TypeScript Schema"
+          :collapsed="false"
+        >
+          <template #header-actions>
+            <HeaderControls>
               <CopyButton
                 :copied="isSchemaCopied"
                 :default-title="'Copy TypeScript Schema'"
                 :disabled="!schema"
                 @click="copySchema"
               />
-            </div>
-            <div 
-              class="subsection-content"
-              :class="{ collapsed: isSchemaCollapsed }"
-              :style="{ maxHeight: isSchemaCollapsed ? '0' : '9999px' }"
-            >
-              <pre class="schema-display">{{ schema }}</pre>
-            </div>
-          </div>
-        </div>
+            </HeaderControls>
+          </template>
+
+          <pre class="sub-display">{{ schema }}</pre>
+        </DetailsSection>
       </template>
       <template v-else-if="hasResponseBody && !isValidJson">
         <div class="error">Response body is not valid JSON</div>
@@ -70,6 +55,7 @@ import { computed, ref } from 'vue';
 import { deps } from 'vue-cocoon';
 import type { NetworkRequest } from '../../../types';
 import DetailsSection from '../DetailsSection.vue';
+import HeaderControls from '../components/HeaderControls.vue';
 import CopyButton from '../components/CopyButton.vue';
 
 const props = defineProps<{
@@ -80,8 +66,6 @@ const { typeScriptSchemaService, clipboardService } = deps();
 const isJsonCopied = ref(false);
 const isSchemaCopied = ref(false);
 const loading = ref(false);
-const isJsonCollapsed = ref(false);
-const isSchemaCollapsed = ref(false);
 
 const hasResponseBody = computed(() => {
   return !!props.request.responseBody;
@@ -193,84 +177,23 @@ async function copySchema() {
   color: var(--color-error);
 }
 
-.response-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+#detailsResponseSchema :deep(.details-data) {
+  background: transparent;
+  padding: 0;
 }
 
-.subsection {
-  display: flex;
-  flex-direction: column;
-}
-
-.subsection-header {
-  user-select: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 0;
-  transition: color 0.2s;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.subsection-header-left {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: 1;
-}
-
-.subsection-header:hover .subsection-header-left {
-  color: var(--color-text-primary);
-}
-
-.subsection-toggle {
-  font-size: 10px;
-  transition: transform 0.2s;
-  display: inline-block;
-}
-
-.subsection-header.collapsed .subsection-toggle {
-  transform: rotate(-90deg);
-}
-
-.subsection-content {
-  transition: max-height 0.2s ease, opacity 0.15s ease, margin 0.2s ease, padding 0.2s ease;
-  overflow: hidden;
-}
-
-.subsection-content.collapsed {
-  max-height: 0 !important;
-  opacity: 0;
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  transition: max-height 0.1s ease, opacity 0.1s ease, margin 0.1s ease, padding 0.1s ease;
-}
-
-.json-display,
-.schema-display {
+.sub-display {
   margin: 0;
+  border-radius: 3px;
+  padding: 6px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 11px;
   white-space: pre-wrap;
   word-break: break-word;
-  overflow-x: auto;
+  overflow: auto;
   max-height: 400px;
-  overflow-y: auto;
   color: var(--color-text-primary);
   background: var(--color-bg-light);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  padding: 12px;
 }
 </style>
 
