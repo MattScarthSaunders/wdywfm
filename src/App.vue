@@ -4,12 +4,12 @@
       :filter-text="filterText"
       :total-requests="requests.length"
       :filtered-requests="filteredRequests.length"
+      :search-value="searchValue"
       :capture-mode-enabled="captureModeEnabled"
-      :captured-value="lastCapturedValue"
-      :ignore-number-punctuation="ignoreNumberPunctuation"
       @update:filter-text="filterText = $event"
       @clear-filter="clearFilter"
-      @update:ignore-number-punctuation="handleIgnoreNumberPunctuationChange"
+      @update:searchValue="searchValue = $event"
+      @triggerSearch="runSearchFromInput"
       @toggle-capture-mode="toggleCaptureMode"
     />
     
@@ -63,8 +63,8 @@ const filteredRequests = ref<NetworkRequest[]>([]);
 const selectedRequest = ref<NetworkRequest | null>(null);
 const filterText = ref('');
 const captureModeEnabled = ref(false);
+const searchValue = ref('');
 const lastCapturedValue = ref<string | null>(null);
-const ignoreNumberPunctuation = ref(false);
 const valueMatchIds = ref<Set<string>>(new Set());
 const valueMatchPaths = ref<Record<string, string[]>>({});
 
@@ -132,17 +132,6 @@ function clearRequests() {
   valueMatchIds.value = new Set();
 }
 
-function handleIgnoreNumberPunctuationChange(v: boolean) {
-  ignoreNumberPunctuation.value = v;
-  if (v) {
-    const current = lastCapturedValue.value;
-    if (current != null) {
-      lastCapturedValue.value = current.replace(/[^\dA-Za-z\s]/g, '');
-    }
-  }
-  updateValueMatches();
-}
-
 function exportData() {
   const data = {
     exportDate: new Date().toISOString(),
@@ -177,11 +166,24 @@ function exportData() {
 function updateValueMatches() {
   const { matchIds, matchPaths } = valueCaptureService.findMatches(
     requests.value,
-    lastCapturedValue.value,
-    ignoreNumberPunctuation.value
+    lastCapturedValue.value
   );
   valueMatchIds.value = matchIds;
   valueMatchPaths.value = matchPaths;
+}
+
+function runSearchFromInput() {
+  const value = searchValue.value.trim();
+
+  if (!value) {
+    lastCapturedValue.value = null;
+    valueMatchIds.value = new Set();
+    valueMatchPaths.value = {};
+    return;
+  }
+
+  lastCapturedValue.value = value;
+  updateValueMatches();
 }
 
 function toggleCaptureMode() {
@@ -202,7 +204,6 @@ function toggleCaptureMode() {
 
   captureModeEnabled.value = true;
   valueMatchIds.value = new Set();
-  lastCapturedValue.value = null;
   chrome.runtime.sendMessage({ action: 'enableCaptureMode', tabId });
 }
 
@@ -212,20 +213,21 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
     if (message.action === 'capturedValue' && typeof message.value === 'string') {
       captureModeEnabled.value = false;
 
-      let value = message.value.trim();
-      if (!value) {
+      const raw = message.value.trim();
+      if (!raw) {
         return;
       }
 
-      if (ignoreNumberPunctuation.value) {
-        value = value.replace(/[^\dA-Za-z\s]/g, '');
-      }
-      lastCapturedValue.value = value;
-      updateValueMatches();
+      searchValue.value = raw;
+      runSearchFromInput();
       applyFilters();
     }
   });
 }
+
+watch(searchValue, () => {
+  runSearchFromInput();
+});
 
 watch([filterText], () => {
   applyFilters();

@@ -18,27 +18,31 @@
     </div>
 
     <div class="capture-bar">
+      <input
+        type="text"
+        class="capture-input"
+        :value="searchValue"
+        @input="$emit('update:searchValue', ($event.target as HTMLInputElement).value)"
+        placeholder="Search response body for value"
+        autocomplete="off"
+      />
       <button
-        class="capture-btn"
+        class="capture-icon-btn"
         type="button"
+        title="Search response bodies"
+        @click="$emit('triggerSearch')"
+      >
+        <span class="material-icons">search</span>
+      </button>
+      <button
+        class="capture-icon-btn"
+        type="button"
+        :class="{ active: captureModeEnabled }"
+        title="Click an element on the page to capture value"
         @click="$emit('toggleCaptureMode')"
       >
-        {{ captureModeEnabled ? 'Cancel capture' : 'Capture value on page' }}
+        <span class="material-icons">ads_click</span>
       </button>
-      <span v-if="capturedValue" class="capture-value">
-        Last captured: <strong>{{ capturedValue }}</strong>
-      </span>
-      <span v-else class="capture-value capture-value-empty">
-        Click "Capture value on page", then click an element in the page
-      </span>
-      <label class="ignore-punct-label">
-        <input
-          type="checkbox"
-          :checked="ignoreNumberPunctuation"
-          @change="$emit('update:ignore-number-punctuation', ($event.target as HTMLInputElement).checked)"
-        />
-        Strip punctuation
-      </label>
     </div>
   </div>
 </template>
@@ -48,15 +52,15 @@ defineProps<{
   filterText: string;
   totalRequests: number;
   filteredRequests: number;
+  searchValue: string;
   captureModeEnabled: boolean;
-  capturedValue: string | null;
-  ignoreNumberPunctuation: boolean;
 }>();
 
 defineEmits<{
   'update:filterText': [value: string];
   'clearFilter': [];
-  'update:ignore-number-punctuation': [value: boolean];
+  'update:searchValue': [value: string];
+  'triggerSearch': [];
   'toggleCaptureMode': [];
 }>();
 </script>
@@ -132,18 +136,51 @@ defineEmits<{
   font-size: 11px;
 }
 
-.capture-btn {
-  padding: 4px 10px;
+.capture-input {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border-input);
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   background: var(--color-bg-white);
+  color: var(--color-text-primary);
+}
+
+.capture-input:focus {
+  outline: none;
+  border-color: var(--color-primary-alt);
+  box-shadow: 0 0 0 2px var(--color-primary-shadow);
+}
+
+.capture-icon-btn {
+  padding: 4px 10px;
+  background: var(--color-bg-light);
   border: 1px solid var(--color-border-input);
   border-radius: 3px;
   cursor: pointer;
   font-size: 11px;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 24px;
+}
+
+.capture-icon-btn .material-icons {
+  font-size: 16px;
+}
+
+.capture-icon-btn:hover {
+  background: var(--color-bg-light);
   color: var(--color-text-primary);
 }
 
-.capture-btn:hover {
-  background: var(--color-bg-light);
+.capture-icon-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
 }
 
 .capture-value {
