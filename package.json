@@ -8,8 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "package": "./scripts/package-extension.sh",
-    "preversion": "npm run build",
-    "version": "node scripts/sync-version.js",
+    "preversion": "npm run build & node scripts/sync-version.js",
     "postversion": "npm run package && git push origin $(git rev-parse --abbrev-ref HEAD) --tags"
   },
   "devDependencies": {
