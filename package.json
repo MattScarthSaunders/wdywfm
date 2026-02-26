@@ -1,6 +1,6 @@
 {
   "name": "wdywfm",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Straightforward network request analysis with session tracking and bot detection detection",
   "type": "module",
   "scripts": {
