@@ -19,7 +19,9 @@
             </HeaderControls>
           </template>
 
-          <pre class="sub-display">{{ formattedJson }}</pre>
+          <div class="sub-display">
+            <JsonTree v-if="parsedJson" :value="parsedJson" />
+          </div>
         </DetailsSection>
 
         <DetailsSection
@@ -57,6 +59,7 @@ import type { NetworkRequest } from '../../../types';
 import DetailsSection from '../DetailsSection.vue';
 import HeaderControls from '../components/HeaderControls.vue';
 import CopyButton from '../components/CopyButton.vue';
+import JsonTree from '../components/JsonTree.vue';
 
 const props = defineProps<{
   request: NetworkRequest;
@@ -104,6 +107,18 @@ const formattedJson = computed(() => {
     return JSON.stringify(jsonObj, null, 2);
   } catch (e) {
     return props.request.responseBody || '';
+  }
+});
+
+const parsedJson = computed(() => {
+  if (!hasResponseBody.value || !isValidJson.value) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(props.request.responseBody!);
+  } catch (e) {
+    return null;
   }
 });
 

@@ -2,11 +2,14 @@
   <div v-if="!hasHeaders" class="no-headers">
     No headers
   </div>
-  <pre v-else class="json-display">{{ formattedJson }}</pre>
+  <div v-else class="json-display">
+    <JsonTree :value="props.headers" />
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import JsonTree from './JsonTree.vue';
 
 const props = defineProps<{
   headers: Record<string, string | string[]>;
@@ -14,10 +17,6 @@ const props = defineProps<{
 
 const hasHeaders = computed(() => {
   return props.headers && Object.keys(props.headers).length > 0;
-});
-
-const formattedJson = computed(() => {
-  return JSON.stringify(props.headers, null, 2);
 });
 </script>
 

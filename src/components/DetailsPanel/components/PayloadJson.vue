@@ -1,24 +1,34 @@
 <template>
   <div class="payload-section">
-      <pre class="json-display">{{ formattedJson }}</pre>
+    <div v-if="parsedJson" class="json-display">
+      <JsonTree :value="parsedJson" />
+    </div>
+    <pre v-else class="json-display">{{ fallbackText }}</pre>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import JsonTree from './JsonTree.vue';
 
 const props = defineProps<{
   title: string;
   data: string;
 }>();
 
-const formattedJson = computed(() => {
+const parsedJson = computed(() => {
   try {
-    const jsonObj = JSON.parse(props.data);
-    return JSON.stringify(jsonObj, null, 2);
+    return JSON.parse(props.data);
   } catch (e) {
-    return props.data;
+    return null;
   }
+});
+
+const fallbackText = computed(() => {
+  if (parsedJson.value) {
+    return '';
+  }
+  return props.data;
 });
 </script>
 

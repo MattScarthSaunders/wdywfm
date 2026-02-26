@@ -39,7 +39,13 @@
           <div class="capture-example-note">
             All arrays truncated to first element for brevity.
           </div>
-          <pre class="capture-example-json"><code>{{ selectedExample.example }}</code></pre>
+          <div class="capture-example-json">
+            <JsonTree
+              v-if="parsedExample"
+              :value="parsedExample"
+            />
+            <pre v-else><code>{{ selectedExample.example }}</code></pre>
+          </div>
         </div>
       </DetailsSection>
     </div>
@@ -53,6 +59,7 @@ import type { NetworkRequest } from '../../../types';
 import DetailsSection from '../DetailsSection.vue';
 import HeaderControls from '../components/HeaderControls.vue';
 import CopyButton from '../components/CopyButton.vue';
+import JsonTree from '../components/JsonTree.vue';
 
 const props = defineProps<{
   request: NetworkRequest;
@@ -79,6 +86,18 @@ const selectedExample = computed(() => {
   }
   const targetPath = selectedPath.value || capturedExamples.value[0].path;
   return capturedExamples.value.find((ex: { path: string; example: string }) => ex.path === targetPath) ?? capturedExamples.value[0];
+});
+
+const parsedExample = computed(() => {
+  if (!selectedExample.value) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(selectedExample.value.example);
+  } catch (e) {
+    return null;
+  }
 });
 
 function selectCapturedPath(path: string) {
