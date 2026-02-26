@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { resolve, join } from 'path';
-import { copyFileSync, existsSync, renameSync, readFileSync, writeFileSync, readdirSync } from 'fs';
+import { copyFileSync, existsSync, renameSync, readFileSync, writeFileSync, readdirSync, mkdirSync } from 'fs';
 
 export default defineConfig({
   base: './', // Use relative paths for Chrome extension
@@ -14,6 +14,23 @@ export default defineConfig({
         if (existsSync('manifest.json')) {
           copyFileSync('manifest.json', 'dist/manifest.json');
         }
+        // Copy icons folder to dist
+        const iconsDir = 'icons';
+        const distIconsDir = 'dist/icons';
+        if (existsSync(iconsDir)) {
+          // Create dist/icons directory if it doesn't exist
+          if (!existsSync(distIconsDir)) {
+            mkdirSync(distIconsDir, { recursive: true });
+          }
+          // Copy all icon files
+          const iconFiles = readdirSync(iconsDir);
+          for (let i = 0; i < iconFiles.length; i++) {
+            const file = iconFiles[i];
+            const srcPath = join(iconsDir, file);
+            const destPath = join(distIconsDir, file);
+            copyFileSync(srcPath, destPath);
+          }
+        }
         // Move HTML files from dist/src/ to dist/ and fix paths
         const distSrcPath = 'dist/src';
         if (existsSync(distSrcPath)) {
@@ -24,15 +41,10 @@ export default defineConfig({
               const srcPath = join(distSrcPath, file);
               const destPath = join('dist', file);
               if (existsSync(srcPath)) {
-                // Read the file content
                 let content = readFileSync(srcPath, 'utf-8');
-                // Fix paths: replace ../assets/ with ./assets/
                 content = content.replace(/\.\.\/assets\//g, './assets/');
-                // Fix paths: replace ../devtools.js with ./devtools.js
                 content = content.replace(/\.\.\/devtools\.js/g, './devtools.js');
-                // Fix paths: replace ../background.js with ./background.js (if needed)
                 content = content.replace(/\.\.\/background\.js/g, './background.js');
-                // Write to destination with fixed paths
                 writeFileSync(destPath, content, 'utf-8');
               }
             }

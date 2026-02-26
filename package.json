@@ -1,12 +1,13 @@
 {
   "name": "wdywfm",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Straightforward network request analysis with session tracking and bot detection detection",
   "type": "module",
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "package": "./package-extension.sh"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.268",
