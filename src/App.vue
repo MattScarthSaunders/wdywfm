@@ -1,13 +1,20 @@
 <template>
   <div class="container">
     <HeaderComponent
-      :filter-text="filterText"
+      :filter-tokens="displayFilterTokens"
       :total-requests="requests.length"
       :filtered-requests="filteredRequests.length"
       :search-value="searchValue"
       :capture-mode-enabled="captureModeEnabled"
-      @update:filter-text="filterText = $event"
+      :method-filter-enabled="methodFilterEnabled"
+      :type-filter-enabled="typeFilterEnabled"
+      :status-filters="statusFilterValues"
+      @applyFilter="handleApplyFilter"
+      @removeFilter="handleRemoveFilter"
       @clear-filter="clearFilter"
+      @toggleMethodFilter="toggleMethodFilter"
+      @toggleTypeFilter="toggleTypeFilter"
+      @addStatusFilter="addStatusFilter"
       @update:searchValue="searchValue = $event"
       @triggerSearch="runSearchFromInput"
       @toggle-capture-mode="toggleCaptureMode"
@@ -47,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { deps } from 'vue-cocoon';
 import type { NetworkRequest } from './types';
 import { filterParser } from './utils';
@@ -70,7 +77,83 @@ const valueMatchPaths = ref<Record<string, string[]>>({});
 
 const { valueCaptureService } = deps();
 
-const { preserveLog, gradeHeaderImportance, hideJavaScript, hideAssets, loadSettings, saveSettings } = useSettings();
+const {
+  preserveLog,
+  gradeHeaderImportance,
+  hideJavaScript,
+  hideAssets,
+  settingsLoaded,
+  methodFilterEnabled,
+  typeFilterEnabled,
+  statusFilterValues,
+  loadSettings,
+  saveSettings
+} = useSettings();
+
+type FilterTokenKind = 'text' | 'method' | 'type' | 'status';
+
+interface DisplayFilterToken {
+  id: string;
+  label: string;
+  kind: FilterTokenKind;
+  value: string | number;
+  textIndex: number | null;
+}
+
+function splitFilterString(filterString: string): string[] {
+  return filterString
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+const displayFilterTokens = computed<DisplayFilterToken[]>(() => {
+  const tokens: DisplayFilterToken[] = [];
+
+  for (const method of methodFilterEnabled.value) {
+    tokens.push({
+      id: `method-${method}`,
+      label: method,
+      kind: 'method',
+      value: method,
+      textIndex: null
+    });
+  }
+
+  for (const status of statusFilterValues.value) {
+    tokens.push({
+      id: `status-${status}`,
+      label: String(status),
+      kind: 'status',
+      value: status,
+      textIndex: null
+    });
+  }
+
+  for (const type of typeFilterEnabled.value) {
+    tokens.push({
+      id: `type-${type}`,
+      label: type,
+      kind: 'type',
+      value: type,
+      textIndex: null
+    });
+  }
+
+  const textTokens = splitFilterString(filterText.value);
+  for (let index = 0; index < textTokens.length; index += 1) {
+    const token = textTokens[index];
+    tokens.push({
+      id: `text-${index}-${token}`,
+      label: token,
+      kind: 'text',
+      value: token,
+      textIndex: index
+    });
+  }
+
+  return tokens;
+});
 
 const { startMonitoring } = useNetworkMonitoring({
   onRequest: (requestData: NetworkRequest) => {
@@ -101,6 +184,60 @@ function clearFilter() {
   applyFilters();
 }
 
+function handleApplyFilter(input: string) {
+  const newTokens = splitFilterString(input);
+  if (newTokens.length === 0) {
+    return;
+  }
+
+  const currentTokens = splitFilterString(filterText.value);
+  const combinedTokens = [...currentTokens, ...newTokens];
+
+  filterText.value = combinedTokens.join(' ');
+  applyFilters();
+}
+
+function handleRemoveFilter(token: DisplayFilterToken) {
+  if (token.kind === 'text' && token.textIndex !== null) {
+    const currentTokens = splitFilterString(filterText.value);
+    const index = token.textIndex;
+
+    if (index < 0 || index >= currentTokens.length) {
+      return;
+    }
+
+    currentTokens.splice(index, 1);
+    filterText.value = currentTokens.join(' ');
+    applyFilters();
+    return;
+  }
+
+  if (token.kind === 'method') {
+    toggleMethodFilter(String(token.value));
+    return;
+  }
+
+  if (token.kind === 'type') {
+    toggleTypeFilter(String(token.value));
+    return;
+  }
+
+  if (token.kind === 'status') {
+    const value = Number(token.value);
+    const current = statusFilterValues.value;
+    const index = current.indexOf(value);
+
+    if (index === -1) {
+      return;
+    }
+
+    const next = current.slice();
+    next.splice(index, 1);
+    statusFilterValues.value = next;
+    applyFilters();
+  }
+}
+
 function applyFilters() {
   const parser = filterParser.parse(filterText.value);
   
@@ -116,9 +253,77 @@ function applyFilters() {
     if (hideAssets.value && ['stylesheet', 'image', 'font', 'media'].includes(request.type)) {
       return false;
     }
+    if (statusFilterValues.value.length > 0) {
+      if (!statusFilterValues.value.includes(request.status)) {
+        return false;
+      }
+    }
+
+    if (methodFilterEnabled.value.length > 0) {
+      const methodUpper = (request.method || '').toUpperCase();
+      if (!methodFilterEnabled.value.includes(methodUpper)) {
+        return false;
+      }
+    }
+
+    if (typeFilterEnabled.value.length > 0 && request.type) {
+      const typeLower = request.type.toLowerCase();
+      if (!typeFilterEnabled.value.includes(typeLower)) {
+        return false;
+      }
+    }
     
     return true;
   });
+}
+
+function toggleMethodFilter(method: string) {
+  const methodUpper = method.toUpperCase();
+  const current = methodFilterEnabled.value;
+  const index = current.indexOf(methodUpper);
+
+  if (index === -1) {
+    methodFilterEnabled.value = [...current, methodUpper];
+  } else {
+    const next = current.slice();
+    next.splice(index, 1);
+    methodFilterEnabled.value = next;
+  }
+
+  applyFilters();
+  saveSettings();
+}
+
+function toggleTypeFilter(type: string) {
+  const typeLower = type.toLowerCase();
+  const current = typeFilterEnabled.value;
+  const index = current.indexOf(typeLower);
+
+  if (index === -1) {
+    typeFilterEnabled.value = [...current, typeLower];
+  } else {
+    const next = current.slice();
+    next.splice(index, 1);
+    typeFilterEnabled.value = next;
+  }
+
+  applyFilters();
+  saveSettings();
+}
+
+function addStatusFilter(value: number) {
+  if (Number.isNaN(value)) {
+    return;
+  }
+
+  const code = Math.floor(value);
+  if (statusFilterValues.value.includes(code)) {
+    return;
+  }
+
+  statusFilterValues.value = [...statusFilterValues.value, code];
+  applyFilters();
+  saveSettings();
 }
 
 function handleRequestSelect(request: NetworkRequest) {
@@ -229,14 +434,15 @@ watch(searchValue, () => {
   runSearchFromInput();
 });
 
-watch([filterText], () => {
-  applyFilters();
-});
-
-watch([preserveLog, gradeHeaderImportance, hideJavaScript, hideAssets], () => {
-  applyFilters();
-  saveSettings();
-});
+watch(
+  [preserveLog, gradeHeaderImportance, hideJavaScript, hideAssets],
+  () => {
+    applyFilters();
+    if (settingsLoaded.value) {
+      saveSettings();
+    }
+  }
+);
 
 onMounted(() => {
   loadSettings();
