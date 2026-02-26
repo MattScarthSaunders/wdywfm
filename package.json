@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "package": "./scripts/package-extension.sh",
-    "version": "node scripts/sync-version.js"
+    "preversion": "npm run build",
+    "version": "node scripts/sync-version.js",
+    "postversion": "npm run package && git push origin $(git rev-parse --abbrev-ref HEAD) --tags"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.268",
