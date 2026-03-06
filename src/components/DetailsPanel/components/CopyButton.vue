@@ -4,7 +4,7 @@
     :disabled="disabled"
     :class="['copy-btn', { copied, 'copy-btn--disabled': disabled }]"
     :title="copied ? copiedTitle || defaultTitle : defaultTitle"
-    @click="$emit('click')"
+    @click.stop="$emit('click')"
   >
     <span class="material-icons">{{ copied ? 'check' : 'content_copy' }}</span>
   </button>

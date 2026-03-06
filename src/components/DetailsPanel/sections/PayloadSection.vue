@@ -72,6 +72,7 @@ import { deps } from 'vue-cocoon';
 import type { NetworkRequest } from '../../../types';
 import type { PayloadSection } from '../../../services/PayloadFormatter';
 import DetailsSection from '../DetailsSection.vue';
+import HeaderControls from '../components/HeaderControls.vue';
 import CopyButton from '../components/CopyButton.vue';
 import PayloadData from '../components/PayloadData.vue';
 import PayloadJson from '../components/PayloadJson.vue';
