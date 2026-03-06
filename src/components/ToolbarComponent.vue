@@ -78,16 +78,5 @@ defineEmits<{
   cursor: pointer;
   color: var(--color-text-primary);
 }
-
-.checkbox-label-inline {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  cursor: pointer;
-  margin-left: auto;
-  margin-right: 6px;
-  white-space: nowrap;
-}
 </style>
 

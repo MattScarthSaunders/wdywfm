@@ -40,17 +40,6 @@ const fallbackText = computed(() => {
 .payload-section:last-child {
   margin-bottom: 0;
 }
-
-.payload-section-title {
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  font-size: 11px;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-
 .json-display {
   margin: 0;
   border-radius: 3px;

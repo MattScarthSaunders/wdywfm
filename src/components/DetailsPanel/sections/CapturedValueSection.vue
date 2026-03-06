@@ -180,10 +180,5 @@ async function copySelectedExample() {
   max-height: 300px;
   overflow: auto;
 }
-
-#captureSummary :deep(.details-data) {
-  background: transparent;
-  padding: 0;
-}
 </style>
 

@@ -470,23 +470,5 @@ function onRemoveToken(token: HeaderFilterToken) {
   border-color: var(--color-primary);
   color: white;
 }
-
-.capture-value {
-  color: var(--color-text-secondary);
-}
-
-.capture-value-empty {
-  font-style: italic;
-}
-
-.ignore-punct-label {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-}
 </style>
 

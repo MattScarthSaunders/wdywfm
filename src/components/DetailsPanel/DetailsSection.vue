@@ -123,55 +123,5 @@ function toggleCollapse() {
   background: transparent;
   padding: 0;
 }
-
-.toggle-view-btn {
-  padding: 2px 8px;
-  background: var(--color-bg-light);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border-input);
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 10px;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  margin-left: auto;
-  margin-right: 6px;
-}
-
-.toggle-view-btn:hover {
-  background: var(--color-border);
-}
-
-.copy-json-btn-header {
-  padding: 2px 8px;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 10px;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  margin-left: auto;
-}
-
-.copy-json-btn-header:hover {
-  background: var(--color-primary-hover);
-}
-
-.copy-json-btn-header.copied {
-  background: var(--color-success);
-}
-
-.checkbox-label-inline {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  cursor: pointer;
-  margin-left: auto;
-  margin-right: 6px;
-  white-space: nowrap;
-}
 </style>
 

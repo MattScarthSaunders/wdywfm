@@ -186,10 +186,6 @@ onUnmounted(() => {
   background: var(--color-primary-alt);
 }
 
-.details-panel.hidden {
-  display: none;
-}
-
 .details-header {
   padding: 12px;
   background: var(--color-bg-light);
@@ -295,25 +291,6 @@ onUnmounted(() => {
   color: var(--color-error);
 }
 
-.copy-json-btn {
-  padding: 4px 12px;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
-
-.copy-json-btn:hover {
-  background: var(--color-primary-hover);
-}
-
-.copy-json-btn.copied {
-  background: var(--color-success);
-}
 
 :deep(.details-data .json-display) {
   background: var(--color-bg-light);
@@ -362,14 +339,6 @@ onUnmounted(() => {
   margin-bottom: 0;
 }
 
-:deep(.details-data .payload-section-title) {
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  font-size: 11px;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
 
 :deep(.details-data .payload-table) {
   background: var(--color-bg-lighter);
