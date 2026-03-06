@@ -41,6 +41,53 @@
 
           <pre class="sub-display">{{ schema }}</pre>
         </DetailsSection>
+
+        <DetailsSection
+          title="Build Data Transform AI Prompt"
+          :collapsed="true"
+        >
+          <div class="transform-tools">
+            <div class="transform-tools-title">
+              Paste target schema
+            </div>
+            <textarea
+              class="transform-tools-target"
+              v-model="targetSchemaInput"
+              placeholder="export interface DesiredType {&#10;  // ...&#10;}"
+            />
+            <div class="transform-tools-notes-label">
+              Optional schema notes:
+            </div>
+            <textarea
+              v-model="notesInput"
+              class="transform-tools-notes"
+              placeholder="For example:&#10;- user_id in the response should map to id in the target.&#10;- timestamps are in seconds and should be converted to milliseconds."
+            />
+            <div class="transform-tools-actions">
+              <button
+                type="button"
+                class="build-prompt-btn"
+                :disabled="!canGeneratePrompt"
+                @click="generateTransformPrompt"
+              >
+                <span class="material-icons">content_paste</span>
+                <span>Build Prompt</span>
+              </button>
+              <HeaderControls v-if="transformPrompt">
+                <CopyButton
+                  :copied="isPromptCopied"
+                  :default-title="'Copy AI Prompt'"
+                  :disabled="!transformPrompt"
+                  @click="copyPrompt"
+                />
+              </HeaderControls>
+            </div>
+            <pre
+              v-if="transformPrompt"
+              class="sub-display transform-prompt-display"
+            >{{ transformPrompt }}</pre>
+          </div>
+        </DetailsSection>
       </template>
       <template v-else-if="hasResponseBody && !isValidJson">
         <div class="error">Response body is not valid JSON</div>
@@ -65,10 +112,14 @@ const props = defineProps<{
   request: NetworkRequest;
 }>();
 
-const { typeScriptSchemaService, clipboardService } = deps();
+const { typeScriptSchemaService, clipboardService, schemaTransformPromptService } = deps();
 const isJsonCopied = ref(false);
 const isSchemaCopied = ref(false);
+const isPromptCopied = ref(false);
 const loading = ref(false);
+const targetSchemaInput = ref('');
+const transformPrompt = ref('');
+const notesInput = ref('');
 
 const hasResponseBody = computed(() => {
   return !!props.request.responseBody;
@@ -135,6 +186,10 @@ const schema = computed(() => {
   }
 });
 
+const canGeneratePrompt = computed(() => {
+  return !!schema.value && !!targetSchemaInput.value.trim();
+});
+
 function getInterfaceName(url: string): string {
   try {
     const urlObj = new URL(url);
@@ -176,6 +231,30 @@ async function copySchema() {
     isSchemaCopied.value = false;
   }, 2000);
 }
+
+function generateTransformPrompt() {
+  if (!schema.value || !targetSchemaInput.value.trim()) {
+    return;
+  }
+
+  transformPrompt.value = schemaTransformPromptService.buildTransformPrompt(
+    schema.value,
+    targetSchemaInput.value,
+    notesInput.value
+  );
+}
+
+async function copyPrompt() {
+  if (!transformPrompt.value) {
+    return;
+  }
+
+  await clipboardService.copyToClipboard(transformPrompt.value);
+  isPromptCopied.value = true;
+  setTimeout(() => {
+    isPromptCopied.value = false;
+  }, 2000);
+}
 </script>
 
 <style scoped>
@@ -209,6 +288,86 @@ async function copySchema() {
 #detailsResponseSchema :deep(.details-data) {
   background: transparent;
   padding: 0;
+}
+
+.transform-tools {
+  margin-top: 8px;
+  padding: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.transform-tools-title {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--color-text-secondary);
+}
+
+.transform-tools textarea {
+  width: 100%;
+  min-height: 80px;
+  max-height: 200px;
+  padding: 6px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 11px;
+  border-radius: 3px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-light);
+  color: var(--color-text-primary);
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.transform-tools-notes-label {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.transform-tools-target {
+  min-height: 60px;
+}
+
+.transform-tools-notes {
+  margin-top: 2px;
+  min-height: 60px;
+}
+
+.transform-tools-actions {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.transform-tools-actions .build-prompt-btn {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  border: none;
+  background: var(--color-primary);
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: 500;
+}
+
+.transform-tools-actions .build-prompt-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.build-prompt-btn:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.build-prompt-btn .material-icons {
+  line-height: 1; 
+  font-size: 16px;
+  display: inline-block;
 }
 </style>
 

@@ -11,6 +11,7 @@ import { PayloadFormatter } from './services/PayloadFormatter';
 import { RequestFormatter } from './services/RequestFormatter';
 import { TypeScriptSchemaService } from './services/TypeScriptSchemaService';
 import { ValueCaptureService } from './services/ValueCaptureService';
+import { SchemaTransformPromptService } from './services/SchemaTransformPromptService';
 
 const app = createApp(App);
 
@@ -24,6 +25,7 @@ registerDeps(app, {
   requestFormatter: () => new RequestFormatter(),
   typeScriptSchemaService: () => new TypeScriptSchemaService(),
   valueCaptureService: () => new ValueCaptureService(),
+  schemaTransformPromptService: () => new SchemaTransformPromptService(),
 });
 
 app.mount('#app');
