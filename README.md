@@ -2,7 +2,11 @@
 
 ## Or 'WHAT DO YOU WANT FROM ME?' for long.
 
-Key features:
+## Why?
+
+I wanted a project to experiment more with 'vibe-coding' and ended up making a project I actually use (one that extends/enhances the existing network devtools tab).
+
+## Key features
 
 - Session Detection: attempts to detect if you're going to need to create and maintain a session
 - Bot Detection Detection: You aren't detecting ME, I'M detecting YOU attempting to detect ME
@@ -28,4 +32,6 @@ This is basically an extension for the network tab in devtools, and under the ho
 
 ## Future endeavours
 
-- response body analysis and similar functionality to what is happening with cookies - where does this data go? How is it used? This will almost probably certainly never make it in, if I'm honest.
+- response body analysis and similar functionality to what is happening with cookies - where does this data go? How is it used?
+- heavily refactor to make more human-debuggable/human-friendly
+- enhance agent rules to more strictly follow code conventions to facilitate the above.
