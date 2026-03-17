@@ -30,7 +30,19 @@ export class TypeScriptSchemaService {
   ): string {
     const safeBaseName = baseName || 'UnidentifiedInterface';
     const normalizedSchema = this.normalizeSchema(schema);
-    
+
+    for (const [name, existingSchema] of interfaceSchemas.entries()) {
+      if (!existingSchema) {
+        continue;
+      }
+
+      const normalizedExisting = this.normalizeSchema(existingSchema);
+
+      if (normalizedExisting === normalizedSchema) {
+        return name;
+      }
+    }
+
     if (!interfaces.has(safeBaseName)) {
       return safeBaseName;
     }
@@ -81,6 +93,149 @@ export class TypeScriptSchemaService {
 
   private normalizeSchema(schema: string): string {
     return schema.replace(/\s+/g, ' ').trim();
+  }
+
+  private parseObjectSchema(schema: string): { [key: string]: { type: string; optional: boolean } } | null {
+    const trimmed = schema.trim();
+    if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
+      return null;
+    }
+
+    const body = trimmed.slice(1, -1);
+    const parts = body.split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+    const result: { [key: string]: { type: string; optional: boolean } } = {};
+
+    for (const line of parts) {
+      const cleaned = line.replace(/;$/, '').trim();
+      if (!cleaned) {
+        continue;
+      }
+
+      const match = cleaned.match(/^"?([^"?\s]+)"?\s*(\?)?:\s*(.+)$/);
+      if (!match) {
+        return null;
+      }
+
+      const key = match[1];
+      const optional = !!match[2];
+      const type = match[3].trim();
+
+      result[key] = { type, optional };
+    }
+
+    return result;
+  }
+
+  private tryMergeObjectSchemas(a: string, b: string): string | null {
+    const parsedA = this.parseObjectSchema(a);
+    const parsedB = this.parseObjectSchema(b);
+
+    if (!parsedA || !parsedB) {
+      return null;
+    }
+
+    const merged: { [key: string]: { type: string; optional: boolean } } = {};
+
+    const keys = new Set<string>();
+    for (const key in parsedA) {
+      if (Object.prototype.hasOwnProperty.call(parsedA, key)) {
+        keys.add(key);
+      }
+    }
+    for (const key in parsedB) {
+      if (Object.prototype.hasOwnProperty.call(parsedB, key)) {
+        keys.add(key);
+      }
+    }
+
+    for (const key of keys) {
+      const propA = parsedA[key];
+      const propB = parsedB[key];
+
+      if (propA && propB) {
+        if (this.normalizeSchema(propA.type) !== this.normalizeSchema(propB.type)) {
+          return null;
+        }
+
+        merged[key] = {
+          type: propA.type,
+          optional: propA.optional || propB.optional
+        };
+      } else if (propA) {
+        merged[key] = {
+          type: propA.type,
+          optional: true
+        };
+      } else if (propB) {
+        merged[key] = {
+          type: propB.type,
+          optional: true
+        };
+      }
+    }
+
+    const sortedKeys = Array.from(Object.keys(merged)).sort();
+    const lines: string[] = [];
+    for (const key of sortedKeys) {
+      const prop = merged[key];
+      const optionalMark = prop.optional ? '?' : '';
+      const safeKey = this.isValidIdentifier(key) ? key : `"${key}"`;
+      lines.push(`  ${safeKey}${optionalMark}: ${prop.type};`);
+    }
+
+    return `{\n${lines.join('\n')}\n}`;
+  }
+
+  private findOrCreateInterfaceNameForMappingValue(
+    schema: string,
+    baseName: string,
+    interfaces: Map<string, string>,
+    interfaceSchemas: Map<string, string>
+  ): string {
+    const normalizedSchema = this.normalizeSchema(schema);
+
+    for (const [name, existingSchema] of interfaceSchemas.entries()) {
+      if (!existingSchema) {
+        continue;
+      }
+
+      const normalizedExisting = this.normalizeSchema(existingSchema);
+
+      if (normalizedExisting === normalizedSchema) {
+        return name;
+      }
+
+      const merged = this.tryMergeObjectSchemas(normalizedExisting, normalizedSchema);
+      if (merged) {
+        const mergedInterface = this.formatAsInterface(merged, name);
+        interfaces.set(name, mergedInterface);
+        interfaceSchemas.set(name, merged);
+        return name;
+      }
+    }
+
+    const safeBaseName = baseName || 'UnidentifiedInterface';
+
+    if (!interfaces.has(safeBaseName)) {
+      interfaceSchemas.set(safeBaseName, schema);
+      return safeBaseName;
+    }
+
+    let counter = 2;
+    let candidateName = safeBaseName + counter;
+    while (interfaces.has(candidateName)) {
+      const candidateSchema = interfaceSchemas.get(candidateName);
+      if (candidateSchema && this.normalizeSchema(candidateSchema) === normalizedSchema) {
+        return candidateName;
+      }
+      counter++;
+      candidateName = safeBaseName + counter;
+    }
+    interfaceSchemas.set(candidateName, schema);
+    return candidateName;
   }
 
   private findNearestNamedProperty(propertyPath: string[]): string | null {
@@ -157,63 +312,134 @@ export class TypeScriptSchemaService {
           
           return { type: `${itemResult.type}[]`, interfaces, interfaceSchemas };
         } else {
-          const properties: string[] = [];
+          const propertyInfos: {
+            key: string;
+            rawType: string;
+          }[] = [];
 
           for (const key in value) {
             if (value.hasOwnProperty(key)) {
               const propValue = value[key];
               const nextParentKey = propertyKey || parentKey;
               const newPropertyPath = [...propertyPath, key];
-              const propResult = this.generateType(propValue, key, nextParentKey, newPropertyPath, interfaces, interfaceSchemas, visited);
-              
+              const propResult = this.generateType(
+                propValue,
+                key,
+                nextParentKey,
+                newPropertyPath,
+                interfaces,
+                interfaceSchemas,
+                visited
+              );
+
               propResult.interfaces.forEach((iface, ifaceKey) => {
                 interfaces.set(ifaceKey, iface);
               });
               propResult.interfaceSchemas.forEach((schema, ifaceKey) => {
                 interfaceSchemas.set(ifaceKey, schema);
               });
-              
-              let propType = propResult.type;
-              
-              if (propResult.type.startsWith('{')) {
-                const baseName = this.toPascalCase(key) || 'UnidentifiedInterface';
-                let effectiveParent: string;
-                const isParentKeyPascalCase = parentKey && 
-                  /^[A-Z][a-zA-Z0-9]*$/.test(parentKey);
-                
-                if (isParentKeyPascalCase) {
-                  effectiveParent = parentKey;
-                } else if (propertyKey) {
-                  effectiveParent = this.toPascalCase(propertyKey);
-                } else {
-                  effectiveParent = '';
-                }
-                
-                const propInterfaceName = this.findOrCreateInterfaceName(
-                  propResult.type,
-                  baseName,
-                  effectiveParent,
-                  interfaces,
-                  interfaceSchemas
-                );
-                
-                if (!interfaces.has(propInterfaceName)) {
-                  const propInterface = this.formatAsInterface(propResult.type, propInterfaceName);
-                  interfaces.set(propInterfaceName, propInterface);
-                  interfaceSchemas.set(propInterfaceName, propResult.type);
-                }
-                propType = propInterfaceName;
-              } else if (propResult.type.startsWith('Array<')) {
-                propType = propResult.type;
-              }
-              
-              const safeKey = this.isValidIdentifier(key) ? key : `"${key}"`;
-              properties.push(`  ${safeKey}: ${propType};`);
+
+              propertyInfos.push({
+                key,
+                rawType: propResult.type
+              });
             }
           }
 
-          if (properties.length === 0) {
+          if (propertyInfos.length === 0) {
             return { type: 'Record<string, unknown>', interfaces, interfaceSchemas };
+          }
+
+          const allKeysRequireQuotes = propertyInfos.every(
+            info => !this.isValidIdentifier(info.key)
+          );
+
+          let allRawTypesSame = true;
+          const firstRawType = propertyInfos[0].rawType;
+          for (let i = 1; i < propertyInfos.length; i++) {
+            if (this.normalizeSchema(propertyInfos[i].rawType) !== this.normalizeSchema(firstRawType)) {
+              allRawTypesSame = false;
+              break;
+            }
+          }
+
+          if (allKeysRequireQuotes && allRawTypesSame) {
+            const nearestProperty = this.findNearestNamedProperty(propertyPath);
+            const mappingBaseNameSource = propertyKey || parentKey || nearestProperty || 'MappedValue';
+            const baseName = this.toPascalCase(mappingBaseNameSource) || 'MappedValue';
+
+            let valueTypeName = firstRawType;
+
+            if (firstRawType.startsWith('{')) {
+              const valueInterfaceName = this.findOrCreateInterfaceNameForMappingValue(
+                firstRawType,
+                baseName,
+                interfaces,
+                interfaceSchemas
+              );
+
+              if (!interfaces.has(valueInterfaceName)) {
+                const valueInterface = this.formatAsInterface(firstRawType, valueInterfaceName);
+                interfaces.set(valueInterfaceName, valueInterface);
+                interfaceSchemas.set(valueInterfaceName, firstRawType);
+              }
+
+              valueTypeName = valueInterfaceName;
+            }
+
+            const mappingInterfaceName = `${this.toPascalCase(valueTypeName)}Mapping`;
+
+            if (!interfaces.has(mappingInterfaceName)) {
+              const mappingInterface = `export interface ${mappingInterfaceName} { [key: string]: ${valueTypeName}; }`;
+              interfaces.set(mappingInterfaceName, mappingInterface);
+              interfaceSchemas.set(mappingInterfaceName, `{ [key: string]: ${valueTypeName}; }`);
+            }
+
+            return { type: mappingInterfaceName, interfaces, interfaceSchemas };
+          }
+
+          const properties: string[] = [];
+
+          for (const info of propertyInfos) {
+            const key = info.key;
+            const rawType = info.rawType;
+
+            let propType = rawType;
+
+            if (rawType.startsWith('{')) {
+              const baseName = this.toPascalCase(key) || 'UnidentifiedInterface';
+              let effectiveParent: string;
+              const isParentKeyPascalCase = parentKey &&
+                /^[A-Z][a-zA-Z0-9]*$/.test(parentKey);
+
+              if (isParentKeyPascalCase) {
+                effectiveParent = parentKey;
+              } else if (propertyKey) {
+                effectiveParent = this.toPascalCase(propertyKey);
+              } else {
+                effectiveParent = '';
+              }
+
+              const propInterfaceName = this.findOrCreateInterfaceName(
+                rawType,
+                baseName,
+                effectiveParent,
+                interfaces,
+                interfaceSchemas
+              );
+
+              if (!interfaces.has(propInterfaceName)) {
+                const propInterface = this.formatAsInterface(rawType, propInterfaceName);
+                interfaces.set(propInterfaceName, propInterface);
+                interfaceSchemas.set(propInterfaceName, rawType);
+              }
+              propType = propInterfaceName;
+            } else if (rawType.startsWith('Array<')) {
+              propType = rawType;
+            }
+
+            const safeKey = this.isValidIdentifier(key) ? key : `"${key}"`;
+            properties.push(`  ${safeKey}: ${propType};`);
           }
 
           const objectType = `{\n${properties.join('\n')}\n}`;

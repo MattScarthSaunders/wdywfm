@@ -90,7 +90,22 @@
         </DetailsSection>
       </template>
       <template v-else-if="hasResponseBody && !isValidJson">
-        <div class="error">Response body is not valid JSON</div>
+        <DetailsSection
+          title="Response Body (raw)"
+          :collapsed="false"
+        >
+          <template #header-actions>
+            <HeaderControls>
+              <CopyButton
+                :copied="isRawCopied"
+                :default-title="'Copy Body'"
+                @click="copyRaw"
+              />
+            </HeaderControls>
+          </template>
+
+          <pre class="sub-display">{{ props.request.responseBody }}</pre>
+        </DetailsSection>
       </template>
       <template v-else>
         <div class="no-schema">No response body available or response is not a JSON response</div>
@@ -116,6 +131,7 @@ const { typeScriptSchemaService, clipboardService, schemaTransformPromptService 
 const isJsonCopied = ref(false);
 const isSchemaCopied = ref(false);
 const isPromptCopied = ref(false);
+const isRawCopied = ref(false);
 const loading = ref(false);
 const targetSchemaInput = ref('');
 const transformPrompt = ref('');
@@ -131,16 +147,6 @@ const isValidJson = computed(() => {
   }
 
   try {
-    const contentType = (props.request.responseHeaders['content-type'] || 
-                        props.request.responseHeaders['Content-Type'] || 
-                        '').toString().toLowerCase();
-    
-    if (!contentType.includes('application/json') && 
-        !contentType.includes('text/json') &&
-        !contentType.includes('application/vnd.api+json')) {
-      return false;
-    }
-
     JSON.parse(props.request.responseBody!);
     return true;
   } catch (e) {
@@ -229,6 +235,19 @@ async function copySchema() {
   isSchemaCopied.value = true;
   setTimeout(() => {
     isSchemaCopied.value = false;
+  }, 2000);
+}
+
+async function copyRaw() {
+  if (!hasResponseBody.value) {
+    return;
+  }
+
+  const body = props.request.responseBody || '';
+  await clipboardService.copyToClipboard(body);
+  isRawCopied.value = true;
+  setTimeout(() => {
+    isRawCopied.value = false;
   }, 2000);
 }
 

@@ -112,14 +112,6 @@ const isValidJson = computed(() => {
   }
 
   try {
-    const contentType = (headerFormatter.getHeader(props.request.requestHeaders, 'content-type') || '').toLowerCase();
-    
-    if (!contentType.includes('application/json') && 
-        !contentType.includes('text/json') &&
-        !contentType.includes('application/vnd.api+json')) {
-      return false;
-    }
-
     JSON.parse(props.request.postData!);
     return true;
   } catch (e) {
